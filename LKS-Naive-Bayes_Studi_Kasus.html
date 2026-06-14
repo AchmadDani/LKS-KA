@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - Naïve Bayes (Dry Run)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header Card */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Main Section Container */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        /* Tables styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Inputs for Sheet */
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 120px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        /* Answer Reveal Buttons */
+        .reveal-box {
+            margin-top: 1.25rem;
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reveal-box.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .highlight-ans {
+            color: var(--success);
+            font-weight: 700;
+            background: var(--success-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-accent {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        /* Checkbox interactive items */
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Simulasi Naïve Bayes (Dry Run)</h1>
+        <div class="subtitle">Mata Kuliah Kecerdasan Artifisial</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi Fokus</span>
+                <span class="meta-value">Naïve Bayes: Kategorikal, Kontinu & Teks</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: LEMBAR SOAL                       -->
+    <!-- ============================================== -->
+    <main id="soal-content" class="tab-content active">
+        
+        <!-- STUDI KASUS A -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-cloud-sun-rain"></i> Studi Kasus A: Naïve Bayes Kategorikal (Tennis Scheduling)
+            </div>
+            <p>Memprediksi keputusan bermain tenis berdasarkan kondisi cuaca:</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Outlook</th>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Wind</th>
+                            <th>Play Tennis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>Sunny</td><td>Hot</td><td>High</td><td>Weak</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>2</td><td>Sunny</td><td>Hot</td><td>High</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>3</td><td>Overcast</td><td>Mild</td><td>High</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>4</td><td>Rain</td><td>Mild</td><td>High</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>5</td><td>Rain</td><td>Cool</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>6</td><td>Rain</td><td>Cool</td><td>Normal</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>7</td><td>Overcast</td><td>Cool</td><td>Normal</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>8</td><td>Sunny</td><td>Mild</td><td>High</td><td>Weak</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>9</td><td>Sunny</td><td>Cool</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>10</td><td>Rain</td><td>Mild</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>11</td><td>Sunny</td><td>Mild</td><td>Normal</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>12</td><td>Overcast</td><td>Mild</td><td>High</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>13</td><td>Overcast</td><td>Mild</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>14</td><td>Rain</td><td>Mild</td><td>High</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Data Baru (\(X_{new}\)):</strong> Outlook = <strong>Overcast</strong>, Temp = <strong>Hot</strong>, Humidity = <strong>High</strong>, Wind = <strong>Strong</strong>.
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Bagian 1: Pemahaman Teori & Zero Frequency</h3>
+            
+            <div style="margin-top: 1rem;">
+                <p><strong>Pertanyaan 1:</strong> Apa perbedaan mendasar antara model <em>Generative Classifier</em> (seperti Naïve Bayes) dengan <em>Discriminative Classifier</em> (seperti Decision Tree/Logistic Regression) dari cara keduanya mempelajari data?</p>
+                <textarea class="form-input" placeholder="Tulis analisis Anda..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-t1')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+                <div id="reveal-t1" class="reveal-box">
+                    <strong>Kunci Jawaban:</strong>
+                    Discriminative classifier langsung memodelkan probabilitas batas kelas \(P(Y \mid X)\) dari data training. Sedangkan Generative classifier memodelkan distribusi gabungan kelas dan fitur \(P(X \mid Y)\) serta prior \(P(Y)\) terlebih dahulu, lalu menerapkan aturan Bayes untuk menghasilkan nilai prediksi akhir.
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <p><strong>Pertanyaan 2:</strong> Hitung nilai Prior Probability untuk kelas target Yes dan No:</p>
+                <div class="grid-2">
+                    <div>
+                        <label class="meta-label">P(Yes)</label>
+                        <input type="text" id="prior-yes" class="form-input" placeholder="Misal: 9/14">
+                    </div>
+                    <div>
+                        <label class="meta-label">P(No)</label>
+                        <input type="text" id="prior-no" class="form-input" placeholder="Misal: 5/14">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <p><strong>Pertanyaan 3:</strong> Hitung likelihood berikut tanpa Laplace Smoothing (nyatakan dalam pecahan):</p>
+                <div class="grid-2">
+                    <div>
+                        <label class="meta-label">P(Temperature = Hot | Yes)</label>
+                        <input type="text" id="like-hot-yes" class="form-input" placeholder="Pecahan, misal: 0/9">
+                    </div>
+                    <div>
+                        <label class="meta-label">P(Outlook = Overcast | No)</label>
+                        <input type="text" id="like-over-no" class="form-input" placeholder="Pecahan, misal: 0/5">
+                    </div>
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkZeroFreq()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Prior & Likelihood</button>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-calculator"></i> Bagian 2: Penerapan Laplace Smoothing
+            </div>
+            <p>Gunakan rumus Laplace Smoothing:</p>
+            <div class="math-block">
+                $$P(x_i \mid c) = \frac{n_{ic} + 1}{n_c + k}$$
+            </div>
+            
+            <p>Masukkan nilai pecahan probabilitas dengan Laplace Smoothing:</p>
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Outlook (k=3)</h4>
+                    <label class="meta-label">P(Sunny | Yes)</label>
+                    <input type="text" id="l-sun-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="3/12">
+                    <label class="meta-label">P(Overcast | Yes)</label>
+                    <input type="text" id="l-over-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="5/12">
+                    <label class="meta-label">P(Overcast | No)</label>
+                    <input type="text" id="l-over-no" class="form-input" placeholder="1/8">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Temperature (k=3)</h4>
+                    <label class="meta-label">P(Hot | Yes)</label>
+                    <input type="text" id="l-hot-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="1/12">
+                    <label class="meta-label">P(Hot | No)</label>
+                    <input type="text" id="l-hot-no" class="form-input" placeholder="3/8">
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkLaplace()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Laplace</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-laplace')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Laplace</button>
+            </div>
+
+            <div id="reveal-laplace" class="reveal-box">
+                <strong>Kunci Jawaban Laplace Smoothing:</strong>
+                <ul>
+                    <li>P(Sunny | Yes) = 3/12, P(Overcast | Yes) = 5/12, P(Overcast | No) = 1/8</li>
+                    <li>P(Hot | Yes) = 1/12, P(Hot | No) = 3/8</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- BAGIAN 3 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-arrow-down-1-9"></i> Bagian 3: Kalkulasi MAP & Keputusan
+            </div>
+            <p>Hitung nilai perkiraan posterior untuk data baru:</p>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Posterior Score (Yes)</label>
+                    <input type="text" id="score-yes" class="form-input" placeholder="0.00376">
+                </div>
+                <div>
+                    <label class="meta-label">Posterior Score (No)</label>
+                    <input type="text" id="score-no" class="form-input" placeholder="0.00854">
+                </div>
+            </div>
+
+            <p><strong>Keputusan Akhir:</strong></p>
+            <input type="text" id="dec-a" class="form-input" placeholder="Yes / No" style="margin-bottom: 1rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkMAP()"><i class="fa-solid fa-circle-check"></i> Cek Hasil Akhir A</button>
+            </div>
+        </div>
+
+        <!-- STUDI KASUS B -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-chart-bar"></i> Studi Kasus B: Gaussian Naïve Bayes (Smartphone Recommendation)
+            </div>
+            <p>Memprediksi kesukaan smartphone kontinu (Recommend: Yes/No):</p>
+            
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Data Baru (\(X'\)):</strong> Battery = <strong>28</strong>, Camera = <strong>4</strong>, Price = <strong>2</strong>.<br>
+                    <strong>Kelas = No:</strong> \(\mu_{Battery}=17.50\), \(\sigma^2_{Battery}=4.85\) | \(\mu_{Camera}=4.67\), \(\sigma^2_{Camera}=2.88\) | \(\mu_{Price}=7.17\), \(\sigma^2_{Price}=4.62\)<br>
+                    <strong>Kelas = Yes:</strong> \(\mu_{Battery}=23.25\), \(\sigma^2_{Battery}=3.96\) | \(\mu_{Camera}=8.88\), \(\sigma^2_{Camera}=2.90\) | \(\mu_{Price}=4.94\), \(\sigma^2_{Price}=5.15\)
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Bagian 4: Perhitungan Probabilitas Kontinu (Gaussian PDF)</h3>
+            <p>Gunakan rumus Gaussian PDF (bulatkan 4 desimal):</p>
+            
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Untuk Kelas No</h4>
+                    <label class="meta-label">P(Battery=28 | No)</label>
+                    <input type="text" id="g-bat-no" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0000">
+                    <label class="meta-label">P(Camera=4 | No)</label>
+                    <input type="text" id="g-cam-no" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.2173">
+                    <label class="meta-label">P(Price=2 | No)</label>
+                    <input type="text" id="g-prc-no" class="form-input" placeholder="0.0101">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Untuk Kelas Yes</h4>
+                    <label class="meta-label">P(Battery=28 | Yes)</label>
+                    <input type="text" id="g-bat-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0116">
+                    <label class="meta-label">P(Camera=4 | Yes)</label>
+                    <input type="text" id="g-cam-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0039">
+                    <label class="meta-label">P(Price=2 | Yes)</label>
+                    <input type="text" id="g-prc-yes" class="form-input" placeholder="0.0754">
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top:1.5rem;">
+                <button class="btn-check" onclick="checkGaussian()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Gaussian</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-gaussian')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Gaussian</button>
+            </div>
+
+            <div id="reveal-gaussian" class="reveal-box">
+                <strong>Kunci Jawaban Gaussian PDF:</strong>
+                <ul>
+                    <li>No: Battery = 0.0000021, Camera = 0.2173, Price = 0.0101</li>
+                    <li>Yes: Battery = 0.0116, Camera = 0.0039, Price = 0.0754</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- BAGIAN 5 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-square-check"></i> Bagian 5: Prediksi Gaussian Naïve Bayes
+            </div>
+            <p>Hitung total posterior score perkalian (dikali Prior: Yes = 8/14, No = 6/14):</p>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Posterior Score (No)</label>
+                    <input type="text" id="score-g-no" class="form-input" placeholder="1.98e-9">
+                </div>
+                <div>
+                    <label class="meta-label">Posterior Score (Yes)</label>
+                    <input type="text" id="score-g-yes" class="form-input" placeholder="1.95e-6">
+                </div>
+            </div>
+
+            <p><strong>Keputusan Rekomendasi:</strong></p>
+            <input type="text" id="dec-b" class="form-input" placeholder="Yes / No" style="margin-bottom:1rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkMAPGaussian()"><i class="fa-solid fa-circle-check"></i> Cek Hasil Akhir B</button>
+            </div>
+        </div>
+
+        <!-- STUDI KASUS C -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-file-invoice"></i> Studi Kasus C: Text Classification Naïve Bayes
+            </div>
+            
+            <p><strong>Dokumen baru (X):</strong> <em>"It's not that bad, I like the story, I like the acting. I just hate how it ends, it's tedious"</em></p>
+            <p>Kamus kosakata \(V = \{ love, great, awesome, touching, bad, like, good, sleep, boring, hate, worse \}\)</p>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Bagian 6: Text Preprocessing & Unknown Words</h3>
+            
+            <div style="margin-top: 1rem;">
+                <p><strong>Pertanyaan 5:</strong> Ekstraksi kata-kata dari dokumen baru di atas yang terdaftar di dalam Vocabulary (V):</p>
+                <input type="text" id="txt-words" class="form-input" placeholder="Tulis daftar kata dipisahkan koma, contoh: bad, like, like, hate">
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <p><strong>Pertanyaan 6:</strong> Hitung probabilitas kata "tedious" (unknown word) dengan Laplace Smoothing:</p>
+                <div class="grid-2">
+                    <div>
+                        <label class="meta-label">P(tedious | Positive)</label>
+                        <input type="text" id="txt-ted-pos" class="form-input" placeholder="Pecahan, misal: 1/24">
+                    </div>
+                    <div>
+                        <label class="meta-label">P(tedious | Negative)</label>
+                        <input type="text" id="txt-ted-neg" class="form-input" placeholder="Pecahan, misal: 1/22">
+                    </div>
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top: 1.5rem;">
+                <button class="btn-check" onclick="checkTextPrep()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Teks</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP             -->
+    <!-- ============================================== -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap: Naïve Bayes LKS
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">A. Studi Kasus A (Categorical)</h3>
+            <ul>
+                <li>Prior: \(P(Yes) = 9/14\), \(P(No) = 5/14\)</li>
+                <li>Zero Likelihood: \(P(Hot \mid Yes) = 0/9 = 0\), \(P(Overcast \mid No) = 0/5 = 0\)</li>
+                <li>Laplace Outlook Yes: Sunny = 3/12, Overcast = 5/12, Rain = 4/12</li>
+                <li>Laplace Outlook No: Sunny = 4/8, Overcast = 1/8, Rain = 3/8</li>
+                <li>Laplace Temperature Yes: Hot = 1/12, Mild = 7/12, Cool = 4/12</li>
+                <li>Laplace Temperature No: Hot = 3/8, Mild = 3/8, Cool = 2/8</li>
+                <li>Posterior Score Yes: \(\frac{5}{12} \times \frac{1}{12} \times \frac{4}{11} \times \frac{4}{11} \times \frac{9}{14} \approx \mathbf{0.00376}\)</li>
+                <li>Posterior Score No: \(\frac{1}{8} \times \frac{3}{8} \times \frac{5}{7} \times \frac{4}{7} \times \frac{5}{14} \approx \mathbf{0.00854}\)</li>
+                <li>Keputusan Akhir: <strong>No (Tidak Bermain)</strong></li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">B. Studi Kasus B (Gaussian)</h3>
+            <ul>
+                <li>\(P(Battery=28 \mid No) \approx \mathbf{0.0000021}\)</li>
+                <li>\(P(Camera=4 \mid No) \approx \mathbf{0.2173}\)</li>
+                <li>\(P(Price=2 \mid No) \approx \mathbf{0.0101}\)</li>
+                <li>\(P(Battery=28 \mid Yes) \approx \mathbf{0.0116}\)</li>
+                <li>\(P(Camera=4 \mid Yes) \approx \mathbf{0.0039}\)</li>
+                <li>\(P(Price=2 \mid Yes) \approx \mathbf{0.0754}\)</li>
+                <li>Posterior No: \(2.11 \times 10^{-6} \times 0.2173 \times 0.0101 \times (6/14) \approx \mathbf{1.98 \times 10^{-9}}\)</li>
+                <li>Posterior Yes: \(0.0116 \times 0.0039 \times 0.0754 \times (8/14) \approx \mathbf{1.95 \times 10^{-6}}\)</li>
+                <li>Keputusan Akhir: <strong>Yes (Direkomendasikan)</strong></li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">C. Studi Kasus C (Teks)</h3>
+            <ul>
+                <li>Kata terekstraksi: <strong>bad, like, like, hate</strong></li>
+                <li>Unknown word: <strong>tedious</strong></li>
+                <li>\(P(tedious \mid Pos) = \mathbf{1/24}\), \(P(tedious \mid Neg) = \mathbf{1/22}\)</li>
+                <li>Posterior Positive: \(\frac{2}{23} \times \frac{3}{23} \times \frac{3}{23} \times \frac{1}{23} \times \frac{1}{24} \times \frac{6}{11} \approx \mathbf{1.46 \times 10^{-6}}\)</li>
+                <li>Posterior Negative: \(\frac{5}{21} \times \frac{2}{21} \times \frac{2}{21} \times \frac{2}{21} \times \frac{1}{22} \times \frac{5}{11} \approx \mathbf{4.25 \times 10^{-6}}\)</li>
+                <li>Keputusan Akhir: <strong>Negative Sentimen</strong></li>
+            </ul>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    function toggleReveal(boxId) {
+        const box = document.getElementById(boxId);
+        box.classList.toggle('visible');
+    }
+
+    function checkZeroFreq() {
+        const py = document.getElementById('prior-yes').value.replace(/\s/g, '');
+        const pn = document.getElementById('prior-no').value.replace(/\s/g, '');
+        const lhy = document.getElementById('like-hot-yes').value.replace(/\s/g, '');
+        const lon = document.getElementById('like-over-no').value.replace(/\s/g, '');
+
+        let correct = true;
+        if (py === '9/14') markInput('prior-yes', true); else { markInput('prior-yes', false); correct = false; }
+        if (pn === '5/14') markInput('prior-no', true); else { markInput('prior-no', false); correct = false; }
+        if (lhy === '0/9' || lhy === '0') markInput('like-hot-yes', true); else { markInput('like-hot-yes', false); correct = false; }
+        if (lon === '0/5' || lon === '0') markInput('like-over-no', true); else { markInput('like-over-no', false); correct = false; }
+
+        if (correct) alert('Prior & Likelihood Nol Anda Benar!');
+        else alert('Ada jawaban prior atau likelihood yang salah.');
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    function checkLaplace() {
+        const l1 = document.getElementById('l-sun-yes').value.replace(/\s/g, '');
+        const l2 = document.getElementById('l-over-yes').value.replace(/\s/g, '');
+        const l3 = document.getElementById('l-over-no').value.replace(/\s/g, '');
+        const l4 = document.getElementById('l-hot-yes').value.replace(/\s/g, '');
+        const l5 = document.getElementById('l-hot-no').value.replace(/\s/g, '');
+
+        let correct = true;
+        if (l1 === '3/12' || l1 === '1/4') markInput('l-sun-yes', true); else { markInput('l-sun-yes', false); correct = false; }
+        if (l2 === '5/12') markInput('l-over-yes', true); else { markInput('l-over-yes', false); correct = false; }
+        if (l3 === '1/8') markInput('l-over-no', true); else { markInput('l-over-no', false); correct = false; }
+        if (l4 === '1/12') markInput('l-hot-yes', true); else { markInput('l-hot-yes', false); correct = false; }
+        if (l5 === '3/8') markInput('l-hot-no', true); else { markInput('l-hot-no', false); correct = false; }
+
+        if (correct) alert('Laplace Smoothing Anda Benar!');
+        else alert('Ada pecahan Laplace yang masih salah.');
+    }
+
+    function checkMAP() {
+        const y = parseFloat(document.getElementById('score-yes').value);
+        const n = parseFloat(document.getElementById('score-no').value);
+        const dec = document.getElementById('dec-a').value.trim().toLowerCase();
+
+        let correct = (y >= 0.003 && y <= 0.004) && (n >= 0.008 && n <= 0.009) && (dec === 'no');
+
+        if (correct) {
+            markInput('score-yes', true);
+            markInput('score-no', true);
+            markInput('dec-a', true);
+            alert('Perhitungan MAP & Keputusan Akhir A Anda Benar!');
+        } else {
+            alert('Posterior score atau keputusan akhir masih belum tepat.');
+        }
+    }
+
+    function checkGaussian() {
+        const n1 = parseFloat(document.getElementById('g-bat-no').value);
+        const n2 = parseFloat(document.getElementById('g-cam-no').value);
+        const n3 = parseFloat(document.getElementById('g-prc-no').value);
+
+        const y1 = parseFloat(document.getElementById('g-bat-yes').value);
+        const y2 = parseFloat(document.getElementById('g-cam-yes').value);
+        const y3 = parseFloat(document.getElementById('g-prc-yes').value);
+
+        let correct = true;
+        if (n1 === 0 || (n1 > 0 && n1 <= 0.0001)) markInput('g-bat-no', true); else { markInput('g-bat-no', false); correct = false; }
+        if (n2 === 0.2173) markInput('g-cam-no', true); else { markInput('g-cam-no', false); correct = false; }
+        if (n3 === 0.0101) markInput('g-prc-no', true); else { markInput('g-prc-no', false); correct = false; }
+
+        if (y1 === 0.0116) markInput('g-bat-yes', true); else { markInput('g-bat-yes', false); correct = false; }
+        if (y2 === 0.0039) markInput('g-cam-yes', true); else { markInput('g-cam-yes', false); correct = false; }
+        if (y3 === 0.0754) markInput('g-prc-yes', true); else { markInput('g-prc-yes', false); correct = false; }
+
+        if (correct) alert('Seluruh perhitungan Gaussian PDF 100% Benar!');
+        else alert('Ada nilai probabilitas kontinu Gaussian yang kurang tepat.');
+    }
+
+    function checkMAPGaussian() {
+        const dec = document.getElementById('dec-b').value.trim().toLowerCase();
+        if (dec === 'yes') {
+            markInput('dec-b', true);
+            alert('Prediksi Keputusan Smartphone Anda Benar! (Yes / Direkomendasikan)');
+        } else {
+            markInput('dec-b', false);
+            alert('Jawaban keputusan masih salah.');
+        }
+    }
+
+    function checkTextPrep() {
+        const words = document.getElementById('txt-words').value.toLowerCase().replace(/\s/g, '');
+        const tp = document.getElementById('txt-ted-pos').value.replace(/\s/g, '');
+        const tn = document.getElementById('txt-ted-neg').value.replace(/\s/g, '');
+
+        let correct = true;
+        if (words.includes('bad') && words.includes('like') && words.includes('hate')) markInput('txt-words', true); else { markInput('txt-words', false); correct = false; }
+        if (tp === '1/24') markInput('txt-ted-pos', true); else { markInput('txt-ted-pos', false); correct = false; }
+        if (tn === '1/22') markInput('txt-ted-neg', true); else { markInput('txt-ted-neg', false); correct = false; }
+
+        if (correct) alert('Jawaban Text Preprocessing Anda Benar!');
+        else alert('Cek kembali daftar kata Vocabulary dan rumus unknown words.');
+    }
+</script>
+
+</body>
+</html>

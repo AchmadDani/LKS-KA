@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - K-Nearest Neighbors (Studi Kasus C)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header Card */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Main Section Container */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        /* Tables styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Inputs for Sheet */
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        /* Answer Reveal Buttons */
+        .reveal-box {
+            margin-top: 1.25rem;
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reveal-box.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .highlight-ans {
+            color: var(--success);
+            font-weight: 700;
+            background: var(--success-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-accent {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        /* Checkbox interactive items */
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Ascii plot box */
+        .ascii-plot {
+            font-family: var(--font-mono);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            color: var(--warning);
+            font-size: 0.9rem;
+            line-height: 1.2;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Simulasi KNN (Studi Kasus C)</h1>
+        <div class="subtitle">Mata Kuliah Kecerdasan Artifisial</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi Fokus</span>
+                <span class="meta-value">Studi Kasus C: Klasifikasi Kelayakan Beasiswa</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: LEMBAR SOAL                       -->
+    <!-- ============================================== -->
+    <main id="soal-content" class="tab-content active">
+        
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-graduation-cap"></i> Deskripsi Studi Kasus: Kelayakan Beasiswa
+            </div>
+            <p>Universitas TelU ingin membuat sistem sederhana untuk menentukan apakah seorang mahasiswa <strong>LAYAK</strong> atau <strong>TIDAK LAYAK</strong> menerima beasiswa berdasarkan:</p>
+            <ul>
+                <li><strong>\(X_1\)</strong> = IPK</li>
+                <li><strong>\(X_2\)</strong> = Penghasilan Orang Tua (juta rupiah/bulan)</li>
+            </ul>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">DATA TRAINING</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>IPK (X1)</th>
+                            <th>Penghasilan (X2)</th>
+                            <th>Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="bold-white">M1</td><td>3.8</td><td>2</td><td><span class="badge badge-success">Layak</span></td></tr>
+                        <tr><td class="bold-white">M2</td><td>3.7</td><td>3</td><td><span class="badge badge-success">Layak</span></td></tr>
+                        <tr><td class="bold-white">M3</td><td>3.5</td><td>4</td><td><span class="badge badge-success">Layak</span></td></tr>
+                        <tr><td class="bold-white">M4</td><td>2.8</td><td>8</td><td><span class="badge badge-danger">Tidak Layak</span></td></tr>
+                        <tr><td class="bold-white">M5</td><td>2.9</td><td>7</td><td><span class="badge badge-danger">Tidak Layak</span></td></tr>
+                        <tr><td class="bold-white">M6</td><td>3.0</td><td>9</td><td><span class="badge badge-danger">Tidak Layak</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Data Test Baru (T1):</strong> IPK = <strong>3.4</strong>, Penghasilan = <strong>5</strong>.<br>
+                    <strong>Parameter:</strong> Gunakan \(K = 3\) dan <strong>Euclidean Distance</strong>.
+                </div>
+            </div>
+        </div>
+
+        <!-- PERTANYAAN 1 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-circle-question"></i> PERTANYAAN 1
+            </div>
+            <p>Menurut Anda, mengapa algoritma KNN tidak memerlukan proses training yang rumit seperti Neural Network?</p>
+            <textarea class="form-input" placeholder="Tulis analisis Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p1')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p1" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Karena KNN adalah algoritma <em>lazy learner</em>. KNN tidak memproses data training untuk membuat model matematis umum (seperti bobot saraf atau pohon keputusan) selama fase training. Algoritma ini hanya menyimpan seluruh data training ke memori, dan komputasi perhitungan jarak baru dimulai saat ada data pengujian (testing).
+            </div>
+        </div>
+
+        <!-- TAHAP 1 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-chart-line"></i> TAHAP 1: Visualisasi Data
+            </div>
+            <p>Plot data training sumbu-X (Penghasilan) dan sumbu-Y (IPK), lalu letakkan data baru T1 (3.4, 5):</p>
+            <div class="ascii-plot">
+IPK
+4.0 | [M1]
+3.8 |      [M2]
+3.6 |           [M3]
+3.4 |                [T1] <span style="color:var(--accent-hover); font-weight:bold;">&lt;-- TARGET TEST</span>
+3.2 |
+3.0 |                               [M5]  [M4]  [M6]
+2.8 |
+    +-----------------------------------------------
+      0    1    2    3    4    5    6    7    8    9
+                     Penghasilan (juta/bulan)
+            </div>
+        </div>
+
+        <!-- TAHAP 2 & 3 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-calculator"></i> TAHAP 2 & 3: Hitung Jarak Euclidean & Tabel Jarak
+            </div>
+            <p>Rumus Euclidean Distance:</p>
+            <div class="math-block">
+                $$d(p,q) = \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2}$$
+            </div>
+            <p>Hitung jarak antara data test T1 (3.4, 5) dengan seluruh data training (bulatkan 2 desimal):</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Label</th>
+                            <th>Langkah Perhitungan Anda</th>
+                            <th>Jarak (d) Anda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bold-white">M1</td>
+                            <td>Layak</td>
+                            <td>\(\sqrt{(3.4 - 3.8)^2 + (5 - 2)^2}\)</td>
+                            <td><input type="text" id="dist-m1" class="form-input-inline" placeholder="3.03"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">M2</td>
+                            <td>Layak</td>
+                            <td>\(\sqrt{(3.4 - 3.7)^2 + (5 - 3)^2}\)</td>
+                            <td><input type="text" id="dist-m2" class="form-input-inline" placeholder="2.02"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">M3</td>
+                            <td>Layak</td>
+                            <td>\(\sqrt{(3.4 - 3.5)^2 + (5 - 4)^2}\)</td>
+                            <td><input type="text" id="dist-m3" class="form-input-inline" placeholder="1.00"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">M4</td>
+                            <td>Tidak Layak</td>
+                            <td>\(\sqrt{(3.4 - 2.8)^2 + (5 - 8)^2}\)</td>
+                            <td><input type="text" id="dist-m4" class="form-input-inline" placeholder="3.06"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">M5</td>
+                            <td>Tidak Layak</td>
+                            <td>\(\sqrt{(3.4 - 2.9)^2 + (5 - 7)^2}\)</td>
+                            <td><input type="text" id="dist-m5" class="form-input-inline" placeholder="2.06"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">M6</td>
+                            <td>Tidak Layak</td>
+                            <td>\(\sqrt{(3.4 - 3.0)^2 + (5 - 9)^2}\)</td>
+                            <td><input type="text" id="dist-m6" class="form-input-inline" placeholder="4.02"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkEuclideanDist()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Jarak</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-euclidean-c')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Jarak</button>
+            </div>
+
+            <div id="reveal-euclidean-c" class="reveal-box">
+                <strong>Kunci Jawaban Euclidean Distance:</strong><br>
+                M1 = 3.03, M2 = 2.02, M3 = 1.00, M4 = 3.06, M5 = 2.06, M6 = 4.02.
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>PERTANYAAN 2:</strong> Mengapa pada algoritma KNN kita harus menghitung jarak terhadap seluruh data training terlebih dahulu?</p>
+            <textarea class="form-input" placeholder="Tulis analisis Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p2')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p2" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Karena KNN tidak memiliki representasi model global yang disederhanakan. Untuk menentukan titik mana yang merupakan "tetangga terdekat" bagi data baru, algoritma harus secara manual mengukur jarak spasial ke setiap data training yang ada untuk diurutkan kemudian.
+            </div>
+        </div>
+
+        <!-- TAHAP 4, 5, 6 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-arrow-down-1-9"></i> TAHAP 4, 5 & 6: Sorting Jarak & Majority Voting
+            </div>
+            <p><strong>Urutkan 3 tetangga terdekat (K = 3):</strong></p>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <label class="meta-label">Peringkat 1 (ID - Label)</label>
+                    <input type="text" id="sort-id1" class="form-input" placeholder="M3 - Layak">
+                </div>
+                <div>
+                    <label class="meta-label">Peringkat 2 (ID - Label)</label>
+                    <input type="text" id="sort-id2" class="form-input" placeholder="M2 - Layak">
+                </div>
+                <div>
+                    <label class="meta-label">Peringkat 3 (ID - Label)</label>
+                    <input type="text" id="sort-id3" class="form-input" placeholder="M5 - Tidak Layak">
+                </div>
+            </div>
+
+            <p><strong>Majority Voting (K = 3):</strong></p>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <label class="meta-label">Suara "Layak"</label>
+                    <input type="number" id="vote-layak-c" class="form-input" placeholder="2">
+                </div>
+                <div>
+                    <label class="meta-label">Suara "Tidak Layak"</label>
+                    <input type="number" id="vote-tidak-c" class="form-input" placeholder="1">
+                </div>
+            </div>
+
+            <p><strong>Hasil Prediksi Akhir T1:</strong></p>
+            <input type="text" id="final-dec-c" class="form-input" style="margin-bottom: 1.5rem;" placeholder="Layak / Tidak Layak">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkK3Voting()"><i class="fa-solid fa-circle-check"></i> Cek Voting K=3</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-voting-c')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Voting</button>
+            </div>
+
+            <div id="reveal-voting-c" class="reveal-box">
+                <strong>Kunci Jawaban K=3:</strong><br>
+                3 terdekat: M3 (Layak, d=1.00), M2 (Layak, d=2.02), dan M5 (Tidak Layak, d=2.06).<br>
+                Hasil Voting: Layak = 2, Tidak Layak = 1. Keputusan Akhir: <strong>Layak</strong>.
+            </div>
+        </div>
+
+        <!-- TAHAP 7 & PERTANYAAN 3, 4, 5, 6 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-sliders"></i> TAHAP 7: Eksperimen Nilai K & Teori
+            </div>
+            
+            <p>Tentukan prediksi kelas T1 untuk nilai K berikut:</p>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <label class="meta-label">Prediksi Kelas K = 1</label>
+                    <input type="text" id="exp-k1" class="form-input" placeholder="Layak">
+                </div>
+                <div>
+                    <label class="meta-label">Prediksi Kelas K = 5</label>
+                    <input type="text" id="exp-k5" class="form-input" placeholder="Layak">
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkKExp()"><i class="fa-solid fa-circle-check"></i> Cek Eksperimen K</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-k-exp')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Eksperimen</button>
+            </div>
+
+            <div id="reveal-k-exp" class="reveal-box">
+                <strong>Kunci Jawaban Eksperimen:</strong><br>
+                <ul>
+                    <li>K = 1: M3 (Layak) \(\rightarrow\) <strong>Layak</strong></li>
+                    <li>K = 5: M3 (Layak), M2 (Layak), M5 (Tidak Layak), M1 (Layak), M4 (Tidak Layak). Voting: Layak = 3, Tidak Layak = 2 \(\rightarrow\) <strong>Layak</strong></li>
+                </ul>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>PERTANYAAN 3:</strong> Jika nilai K diubah menjadi K=1, apakah hasil klasifikasi selalu sama dengan K=3? Jelaskan.</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p3')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p3" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Tidak selalu sama. K=1 sangat sensitif terhadap noise/pencilan karena hanya bergantung pada satu data terdekat. Sementara K=3 mengambil keputusan berdasarkan suara mayoritas dari tiga data, sehingga batas keputusannya lebih stabil.
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>PERTANYAAN 4:</strong> Apa keuntungan menggunakan K yang lebih besar?</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p4')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p4" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Meminimalkan pengaruh noise/outlier dalam data training, menghasilkan batas keputusan yang lebih mulus (smooth), dan meningkatkan keandalan generalisasi prediksi.
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>PERTANYAAN 5:</strong> Apa risiko jika memilih nilai K yang terlalu besar?</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p5')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p5" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Risiko terjadinya <em>underfitting</em>, di mana model mengabaikan pola klasifikasi lokal yang penting karena hasil voting didominasi secara paksa oleh kelas mayoritas global di dalam dataset.
+            </div>
+        </div>
+
+        <!-- TAHAP 8 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-route"></i> TAHAP 8: Menggunakan Manhattan Distance
+            </div>
+            <p>Rumus Manhattan Distance:</p>
+            <div class="math-block">
+                $$d(p,q) = |x_1 - x_2| + |y_1 - y_2|$$
+            </div>
+            <p>Hitung kembali jarak T1 terhadap seluruh data training menggunakan Manhattan Distance:</p>
+
+            <div class="table-responsive" style="max-width: 500px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Jarak Manhattan Anda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="bold-white">M1</td><td><input type="text" id="man-m1" class="form-input-inline" placeholder="3.4"></td></tr>
+                        <tr><td class="bold-white">M2</td><td><input type="text" id="man-m2" class="form-input-inline" placeholder="2.3"></td></tr>
+                        <tr><td class="bold-white">M3</td><td><input type="text" id="man-m3" class="form-input-inline" placeholder="1.1"></td></tr>
+                        <tr><td class="bold-white">M4</td><td><input type="text" id="man-m4" class="form-input-inline" placeholder="3.6"></td></tr>
+                        <tr><td class="bold-white">M5</td><td><input type="text" id="man-m5" class="form-input-inline" placeholder="2.5"></td></tr>
+                        <tr><td class="bold-white">M6</td><td><input type="text" id="man-m6" class="form-input-inline" placeholder="4.4"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkManhattanDist()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Manhattan</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-manhattan-c')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Manhattan</button>
+            </div>
+
+            <div id="reveal-manhattan-c" class="reveal-box">
+                <strong>Kunci Jawaban Manhattan Distance:</strong><br>
+                M1 = 3.4, M2 = 2.3, M3 = 1.1, M4 = 3.6, M5 = 2.5, M6 = 4.4.
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>PERTANYAAN 7:</strong> Apakah hasil klasifikasi berubah ketika menggunakan Manhattan Distance? Jika berubah, mengapa hal tersebut dapat terjadi?</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p7-c')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+            <div id="reveal-p7-c" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Hasil klasifikasi tidak berubah (tetap "Layak" karena 3 tetangga terdekatnya masih M3, M2, dan M5). Namun, secara umum hasil dapat berubah jika posisi geometris tetangga berada di batas batas keputusan, karena Manhattan mengukur jarak sepanjang jalur kisi (grid/blok kota) sedangkan Euclidean mengukur garis lurus terpendek.
+            </div>
+        </div>
+
+        <!-- KESIMPULAN -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-clipboard-check"></i> KESIMPULAN
+            </div>
+            <p>Lengkapi pernyataan berikut:</p>
+            <ol style="margin-left: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <li>KNN merupakan algoritma <input type="text" id="kes-1" class="form-input-inline" style="width:250px;" placeholder="Supervised / Lazy Learning"></li>
+                <li>Proses training pada KNN adalah <input type="text" id="kes-2" class="form-input-inline" style="width:300px;" placeholder="menyimpan seluruh data ke memori"></li>
+                <li>Semakin kecil jarak, maka data dianggap semakin <input type="text" id="kes-3" class="form-input-inline" style="width:150px;" placeholder="mirip / serupa"></li>
+                <li>Nilai K digunakan untuk menentukan jumlah <input type="text" id="kes-4" class="form-input-inline" style="width:200px;" placeholder="tetangga terdekat"></li>
+                <li>Klasifikasi pada KNN dilakukan menggunakan <input type="text" id="kes-5" class="form-input-inline" style="width:200px;" placeholder="majority voting"></li>
+                <li>Dua distance metric yang dipelajari pada praktikum ini adalah: 
+                    <input type="text" id="kes-6a" class="form-input-inline" style="width:180px;" placeholder="Euclidean Distance"> dan 
+                    <input type="text" id="kes-6b" class="form-input-inline" style="width:180px;" placeholder="Manhattan Distance">
+                </li>
+            </ol>
+
+            <div class="check-btn-container" style="margin-top: 1.5rem;">
+                <button class="btn-check" onclick="checkConclusions()"><i class="fa-solid fa-circle-check"></i> Cek Kesimpulan</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-kesimpulan')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Kesimpulan</button>
+            </div>
+
+            <div id="reveal-kesimpulan" class="reveal-box">
+                <strong>Kunci Jawaban Kesimpulan:</strong>
+                <ol style="margin-left: 1.5rem;">
+                    <li>Supervised Machine Learning / Lazy Learning</li>
+                    <li>Menyimpan data training ke memori</li>
+                    <li>Mirip / Serupa (memiliki kemiripan karakteristik)</li>
+                    <li>Tetangga terdekat yang dilibatkan dalam voting</li>
+                    <li>Majority voting (pemungutan suara terbanyak)</li>
+                    <li>Euclidean Distance dan Manhattan Distance</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- REFLEKSI -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-lightbulb"></i> REFLEKSI
+            </div>
+            <p>Menurut Anda, apakah KNN cocok digunakan untuk kasus-kasus berikut? Tuliskan alasan Anda:</p>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color:var(--text-primary);">a. Klasifikasi Mahasiswa Penerima Beasiswa</h4>
+                <textarea class="form-input" placeholder="Tulis alasan Anda..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-ref-a')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+                <div id="reveal-ref-a" class="reveal-box">
+                    <strong>Analisis Kecocokan:</strong> Cocok, karena jumlah fiturnya sedikit (IPK, penghasilan, tanggungan, dll.) dan pola kelayakan biasanya terkelompok dalam kedekatan profil ekonomi dan akademik yang mirip.
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color:var(--text-primary);">b. Klasifikasi Gambar Wajah</h4>
+                <textarea class="form-input" placeholder="Tulis alasan Anda..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-ref-b')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+                <div id="reveal-ref-b" class="reveal-box">
+                    <strong>Analisis Kecocokan:</strong> Kurang cocok, karena data gambar memiliki dimensi yang sangat tinggi (Curse of Dimensionality) dan KNN sangat sensitif terhadap perubahan kecil seperti rotasi, pergeseran piksel, pencahayaan, atau ekspresi wajah.
+                </div>
+            </div>
+
+            <div>
+                <h4 style="color:var(--text-primary);">c. Prediksi Harga Rumah</h4>
+                <textarea class="form-input" placeholder="Tulis alasan Anda..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-ref-c')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci</button>
+                <div id="reveal-ref-c" class="reveal-box">
+                    <strong>Analisis Kecocokan:</strong> Cocok (menggunakan KNN Regresi), karena rumah di lokasi geografis yang sama dengan spesifikasi fisik yang mirip cenderung memiliki harga sebanding.
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP             -->
+    <!-- ============================================== -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap: Studi Kasus C
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">A. Perhitungan Jarak Euclidean (T1 ke M1-M6)</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Langkah Perhitungan</th>
+                            <th>Jarak (d)</th>
+                            <th>Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>M1</td><td>\(\sqrt{(3.4-3.8)^2 + (5-2)^2} = \sqrt{0.16 + 9} = \sqrt{9.16}\)</td><td class="bold-white">3.03</td><td>Layak</td></tr>
+                        <tr><td>M2</td><td>\(\sqrt{(3.4-3.7)^2 + (5-3)^2} = \sqrt{0.09 + 4} = \sqrt{4.09}\)</td><td class="bold-white">2.02</td><td>Layak</td></tr>
+                        <tr><td>M3</td><td>\(\sqrt{(3.4-3.5)^2 + (5-4)^2} = \sqrt{0.01 + 1} = \sqrt{1.01}\)</td><td class="bold-white" style="color:var(--success);">1.00</td><td>Layak</td></tr>
+                        <tr><td>M4</td><td>\(\sqrt{(3.4-2.8)^2 + (5-8)^2} = \sqrt{0.36 + 9} = \sqrt{9.36}\)</td><td class="bold-white">3.06</td><td>Tidak Layak</td></tr>
+                        <tr><td>M5</td><td>\(\sqrt{(3.4-2.9)^2 + (5-7)^2} = \sqrt{0.25 + 4} = \sqrt{4.25}\)</td><td class="bold-white">2.06</td><td>Tidak Layak</td></tr>
+                        <tr><td>M6</td><td>\(\sqrt{(3.4-3.0)^2 + (5-9)^2} = \sqrt{0.16 + 16} = \sqrt{16.16}\)</td><td class="bold-white">4.02</td><td>Tidak Layak</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">B. Peringkat Tetangga Terdekat (Euclidean)</h3>
+            <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
+                <li>M3 (Jarak = 1.00) — <span class="badge badge-success">Layak</span></li>
+                <li>M2 (Jarak = 2.02) — <span class="badge badge-success">Layak</span></li>
+                <li>M5 (Jarak = 2.06) — <span class="badge badge-danger">Tidak Layak</span></li>
+                <li>M1 (Jarak = 3.03) — <span class="badge badge-success">Layak</span></li>
+                <li>M4 (Jarak = 3.06) — <span class="badge badge-danger">Tidak Layak</span></li>
+                <li>M6 (Jarak = 4.02) — <span class="badge badge-danger">Tidak Layak</span></li>
+            </ol>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">C. Voting & Hasil Prediksi (K = 3)</h3>
+            <p>Tiga tetangga terdekat: M3 (Layak), M2 (Layak), M5 (Tidak Layak).<br>
+            <strong>Voting:</strong> Layak (2 suara) vs Tidak Layak (1 suara).<br>
+            <strong>Prediksi Akhir T1:</strong> <span class="highlight-ans">Layak</span>.</p>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">D. Perhitungan Manhattan Distance</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Langkah Perhitungan Manhattan</th>
+                            <th>Jarak Manhattan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>M1</td><td>\(|3.4 - 3.8| + |5 - 2| = 0.4 + 3\)</td><td class="bold-white">3.4</td></tr>
+                        <tr><td>M2</td><td>\(|3.4 - 3.7| + |5 - 3| = 0.3 + 2\)</td><td class="bold-white">2.3</td></tr>
+                        <tr><td>M3</td><td>\(|3.4 - 3.5| + |5 - 4| = 0.1 + 1\)</td><td class="bold-white">1.1</td></tr>
+                        <tr><td>M4</td><td>\(|3.4 - 2.8| + |5 - 8| = 0.6 + 3\)</td><td class="bold-white">3.6</td></tr>
+                        <tr><td>M5</td><td>\(|3.4 - 2.9| + |5 - 7| = 0.5 + 2\)</td><td class="bold-white">2.5</td></tr>
+                        <tr><td>M6</td><td>\(|3.4 - 3.0| + |5 - 9| = 0.4 + 4\)</td><td class="bold-white">4.4</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    function toggleReveal(boxId) {
+        const box = document.getElementById(boxId);
+        box.classList.toggle('visible');
+    }
+
+    function checkEuclideanDist() {
+        const correctVals = {
+            'm1': 3.03, 'm2': 2.02, 'm3': 1.00, 'm4': 3.06, 'm5': 2.06, 'm6': 4.02
+        };
+
+        let correct = true;
+        for (const [key, value] of Object.entries(correctVals)) {
+            const val = parseFloat(document.getElementById(`dist-${key}`).value);
+            if (val === value) {
+                markInput(`dist-${key}`, true);
+            } else {
+                markInput(`dist-${key}`, false);
+                correct = false;
+            }
+        }
+
+        if (correct) {
+            alert('Semua perhitungan jarak Euclidean Anda 100% Benar!');
+        } else {
+            alert('Ada beberapa nilai jarak Euclidean yang kurang tepat atau tidak dibulatkan 2 desimal.');
+        }
+    }
+
+    function checkManhattanDist() {
+        const correctVals = {
+            'm1': 3.4, 'm2': 2.3, 'm3': 1.1, 'm4': 3.6, 'm5': 2.5, 'm6': 4.4
+        };
+
+        let correct = true;
+        for (const [key, value] of Object.entries(correctVals)) {
+            const val = parseFloat(document.getElementById(`man-${key}`).value);
+            if (val === value) {
+                markInput(`man-${key}`, true);
+            } else {
+                markInput(`man-${key}`, false);
+                correct = false;
+            }
+        }
+
+        if (correct) {
+            alert('Semua perhitungan jarak Manhattan Anda 100% Benar!');
+        } else {
+            alert('Ada beberapa nilai jarak Manhattan yang masih salah.');
+        }
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    function checkK3Voting() {
+        const id1 = document.getElementById('sort-id1').value.toUpperCase().replace(/\s/g, '');
+        const id2 = document.getElementById('sort-id2').value.toUpperCase().replace(/\s/g, '');
+        const id3 = document.getElementById('sort-id3').value.toUpperCase().replace(/\s/g, '');
+
+        const vLayak = parseInt(document.getElementById('vote-layak-c').value);
+        const vTidak = parseInt(document.getElementById('vote-tidak-c').value);
+        const dec = document.getElementById('final-dec-c').value.trim().toLowerCase();
+
+        const correctIds = (id1 === 'M3-LAYAK' || id1 === 'M3') && 
+                           (id2 === 'M2-LAYAK' || id2 === 'M2') && 
+                           (id3 === 'M5-TIDAKLAYAK' || id3 === 'M5');
+
+        if (correctIds && vLayak === 2 && vTidak === 1 && dec === 'layak') {
+            alert('Urutan tetangga dan majority voting K=3 Anda Benar!');
+            markInput('sort-id1', true);
+            markInput('sort-id2', true);
+            markInput('sort-id3', true);
+            markInput('vote-layak-c', true);
+            markInput('vote-tidak-c', true);
+            markInput('final-dec-c', true);
+        } else {
+            alert('Ada yang salah pada urutan tetangga terdekat atau jumlah suara voting.');
+        }
+    }
+
+    function checkKExp() {
+        const k1 = document.getElementById('exp-k1').value.trim().toLowerCase();
+        const k5 = document.getElementById('exp-k5').value.trim().toLowerCase();
+
+        if (k1 === 'layak' && k5 === 'layak') {
+            alert('Eksperimen K=1 dan K=5 Anda Benar!');
+            markInput('exp-k1', true);
+            markInput('exp-k5', true);
+        } else {
+            alert('Prediksi untuk K=1 atau K=5 masih salah.');
+        }
+    }
+
+    function checkConclusions() {
+        const c1 = document.getElementById('kes-1').value.trim().toLowerCase();
+        const c3 = document.getElementById('kes-3').value.trim().toLowerCase();
+        const c4 = document.getElementById('kes-4').value.trim().toLowerCase();
+        const c5 = document.getElementById('kes-5').value.trim().toLowerCase();
+
+        let correct = true;
+        if (c1.includes('supervised') || c1.includes('lazy')) markInput('kes-1', true); else { markInput('kes-1', false); correct = false; }
+        if (c3.includes('mirip') || c3.includes('serupa') || c3.includes('dekat')) markInput('kes-3', true); else { markInput('kes-3', false); correct = false; }
+        if (c4.includes('tetangga')) markInput('kes-4', true); else { markInput('kes-4', false); correct = false; }
+        if (c5.includes('voting') || c5.includes('vote')) markInput('kes-5', true); else { markInput('kes-5', false); correct = false; }
+
+        if (correct) {
+            alert('Kesimpulan konseptual Anda sebagian besar sudah tepat!');
+        } else {
+            alert('Beberapa isian kesimpulan masih kurang tepat.');
+        }
+    }
+</script>
+
+</body>
+</html>

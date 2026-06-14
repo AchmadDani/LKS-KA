@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - K-Nearest Neighbors (Studi Kasus B)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header Card */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Main Section Container */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        /* Tables styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Inputs for Sheet */
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        /* Answer Reveal Buttons */
+        .reveal-box {
+            margin-top: 1.25rem;
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reveal-box.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .highlight-ans {
+            color: var(--success);
+            font-weight: 700;
+            background: var(--success-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-accent {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        /* Checkbox interactive items */
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Simulasi KNN (Dry Run)</h1>
+        <div class="subtitle">Mata Kuliah Kecerdasan Artifisial</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi Fokus</span>
+                <span class="meta-value">Studi Kasus B: KNN Regresi</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: LEMBAR SOAL                       -->
+    <!-- ============================================== -->
+    <main id="soal-content" class="tab-content active">
+        
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-house"></i> Deskripsi Studi Kasus B: Prediksi Harga Rumah
+            </div>
+            <p>Seorang agen properti ingin memprediksi <strong>harga jual rumah</strong> (dalam satuan juta rupiah) berdasarkan <strong>luas tanah</strong> (\(m^2\)). Data historis tersedia sebagai berikut:</p>
+            
+            <div class="table-responsive" style="max-width: 500px; margin: 1.5rem 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>X (Luas Tanah, m²)</th>
+                            <th>Y (Harga, juta Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>60</td><td class="bold-white">350</td></tr>
+                        <tr><td>75</td><td class="bold-white">420</td></tr>
+                        <tr><td>90</td><td class="bold-white">510</td></tr>
+                        <tr><td>100</td><td class="bold-white">580</td></tr>
+                        <tr><td>120</td><td class="bold-white">650</td></tr>
+                        <tr><td>135</td><td class="bold-white">720</td></tr>
+                        <tr><td>150</td><td class="bold-white">800</td></tr>
+                        <tr><td>160</td><td class="bold-white">840</td></tr>
+                        <tr><td>180</td><td class="bold-white">920</td></tr>
+                        <tr><td>200</td><td class="bold-white">1000</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Data Baru (\(X_{new}\)):</strong> Luas Tanah = <strong>110 \(m^2\)</strong>.<br>
+                    <strong>Parameter:</strong> Gunakan \(K = 3\).
+                </div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 6 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-calculator"></i> BAGIAN 6: TAHAP 5 — Hitung Jarak untuk Regresi
+            </div>
+            <p>Rumus jarak 1 dimensi (karena hanya ada 1 fitur X):</p>
+            <div class="math-block">
+                $$d(X_{new}, X_i) = |X_{new} - X_i|$$
+            </div>
+            <p>Hitung selisih mutlak antara \(X_{new} = 110\) dan masing-masing data training:</p>
+            
+            <div class="table-responsive" style="max-width: 600px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>\(X_i\)</th>
+                            <th>\(Y_i\)</th>
+                            <th>Jarak Anda: \(|110 - X_i|\)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>60</td><td>350</td><td><input type="text" id="dist-x60" class="form-input-inline" placeholder="50"></td></tr>
+                        <tr><td>75</td><td>420</td><td><input type="text" id="dist-x75" class="form-input-inline" placeholder="35"></td></tr>
+                        <tr><td>90</td><td>510</td><td><input type="text" id="dist-x90" class="form-input-inline" placeholder="20"></td></tr>
+                        <tr><td>100</td><td>580</td><td><input type="text" id="dist-x100" class="form-input-inline" placeholder="10"></td></tr>
+                        <tr><td>120</td><td>650</td><td><input type="text" id="dist-x120" class="form-input-inline" placeholder="10"></td></tr>
+                        <tr><td>135</td><td>720</td><td><input type="text" id="dist-x135" class="form-input-inline" placeholder="25"></td></tr>
+                        <tr><td>150</td><td>800</td><td><input type="text" id="dist-x150" class="form-input-inline" placeholder="40"></td></tr>
+                        <tr><td>160</td><td>840</td><td><input type="text" id="dist-x160" class="form-input-inline" placeholder="50"></td></tr>
+                        <tr><td>180</td><td>920</td><td><input type="text" id="dist-x180" class="form-input-inline" placeholder="70"></td></tr>
+                        <tr><td>200</td><td>1000</td><td><input type="text" id="dist-x200" class="form-input-inline" placeholder="90"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkRegDistances()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Selisih</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-reg-dist')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Selisih</button>
+            </div>
+            
+            <div id="reveal-reg-dist" class="reveal-box">
+                <strong>Kunci Jawaban Jarak (1D):</strong><br>
+                Selisih dari 110 ke masing-masing data: 50, 35, 20, 10, 10, 25, 40, 50, 70, 90.
+            </div>
+        </div>
+
+        <!-- BAGIAN 7 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i> BAGIAN 7: TAHAP 6 — Prediksi Uniform Average (K = 3)
+            </div>
+            <p>Pilih \(K = 3\) tetangga dengan jarak terkecil. Berapakah rata-rata seragam nilainya?</p>
+            
+            <div class="math-block">
+                $$\hat{Y}_{uniform} = \frac{Y_1 + Y_2 + Y_3}{3}$$
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Masukkan Prediksi Anda (\(\hat{Y}_{uniform}\))</label>
+                    <input type="number" id="pred-uniform" class="form-input" placeholder="Masukkan angka dalam juta">
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkUniform()"><i class="fa-solid fa-circle-check"></i> Cek Nilai</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-uniform')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Uniform</button>
+            </div>
+
+            <div id="reveal-uniform" class="reveal-box">
+                <strong>Kunci Jawaban:</strong><br>
+                3 tetangga terdekat: \(X_i = 100\) (jarak 10, \(Y=580\)), \(X_i = 120\) (jarak 10, \(Y=650\)), dan \(X_i = 90\) (jarak 20, \(Y=510\)).<br>
+                $$\hat{Y}_{uniform} = \frac{580 + 650 + 510}{3} = \frac{1740}{3} = \mathbf{580}\text{ juta Rp.}$$
+            </div>
+        </div>
+
+        <!-- BAGIAN 8 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-weight-hanging"></i> BAGIAN 8: TAHAP 7 — Prediksi Weighted Average (K = 3)
+            </div>
+            <p>Gunakan rumus bobot berbasis jarak:</p>
+            <div class="math-block">
+                $$w_i = \frac{1}{|X_{new} - X_i| + \varepsilon} \quad (\varepsilon = 0.0001)$$
+            </div>
+            <p>Lengkapi perhitungan untuk 3 tetangga terdekat di bawah ini (bulatkan 4 angka di belakang koma untuk bobot):</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tetangga \(X_i\)</th>
+                            <th>Harga \(Y_i\)</th>
+                            <th>Jarak</th>
+                            <th>Bobot (\(w_i\)) Anda</th>
+                            <th>\(w_i \times Y_i\) Anda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="number" id="w-x1" class="form-input-inline" placeholder="100"></td>
+                            <td><input type="number" id="w-y1" class="form-input-inline" placeholder="580"></td>
+                            <td>10</td>
+                            <td><input type="text" id="w-val1" class="form-input-inline" placeholder="0.1"></td>
+                            <td><input type="text" id="w-mult1" class="form-input-inline" placeholder="58"></td>
+                        </tr>
+                        <tr>
+                            <td><input type="number" id="w-x2" class="form-input-inline" placeholder="120"></td>
+                            <td><input type="number" id="w-y2" class="form-input-inline" placeholder="650"></td>
+                            <td>10</td>
+                            <td><input type="text" id="w-val2" class="form-input-inline" placeholder="0.1"></td>
+                            <td><input type="text" id="w-mult2" class="form-input-inline" placeholder="65"></td>
+                        </tr>
+                        <tr>
+                            <td><input type="number" id="w-x3" class="form-input-inline" placeholder="90"></td>
+                            <td><input type="number" id="w-y3" class="form-input-inline" placeholder="510"></td>
+                            <td>20</td>
+                            <td><input type="text" id="w-val3" class="form-input-inline" placeholder="0.05"></td>
+                            <td><input type="text" id="w-mult3" class="form-input-inline" placeholder="25.5"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Total Hasil Akhir Prediksi (\(\hat{Y}_{weighted}\))</label>
+                    <input type="number" id="pred-weighted" class="form-input" placeholder="Hasil akhir">
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkWeighted()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Weighted</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-weighted')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Weighted</button>
+            </div>
+
+            <div id="reveal-weighted" class="reveal-box">
+                <strong>Kunci Jawaban:</strong><br>
+                <ul>
+                    <li>Bobot 1 (jarak 10): \(w_1 = \frac{1}{10} = 0.1\) \(\rightarrow w_1 \times Y_1 = 58\)</li>
+                    <li>Bobot 2 (jarak 10): \(w_2 = \frac{1}{10} = 0.1\) \(\rightarrow w_2 \times Y_2 = 65\)</li>
+                    <li>Bobot 3 (jarak 20): \(w_3 = \frac{1}{20} = 0.05\) \(\rightarrow w_3 \times Y_3 = 25.5\)</li>
+                    <li>\(\sum w_i = 0.25\) dan \(\sum (w_i \times Y_i) = 148.5\)</li>
+                    <li>Hasil Akhir: \(\hat{Y}_{weighted} = \frac{148.5}{0.25} = \mathbf{594}\text{ juta Rp.}\)</li>
+                </ul>
+            </div>
+            
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>Pertanyaan 5:</strong> Bandingkan hasil prediksi Uniform Average dan Weighted Average. Manakah yang lebih akurat untuk kasus ini dan mengapa? Dalam kondisi apa Weighted Average lebih disukai dibanding Uniform Average?</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p5')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p5" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Weighted Average (594 Juta Rp) lebih akurat karena memprioritaskan tetangga yang lebih dekat (jarak 10 m dari target) daripada yang lebih jauh (jarak 20 m). Metode tertimbang disukai saat penyebaran tetangga tidak rata (sebagian dekat, sebagian jauh) sehingga kontribusi tetangga yang jauh tidak mendistorsi rata-rata.
+            </div>
+        </div>
+
+        <!-- BAGIAN 9 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-square-poll-vertical"></i> BAGIAN 9: TAHAP 8 — Evaluasi Error Regresi
+            </div>
+            <p>Misalkan harga aktual rumah adalah <strong>\(Y_{aktual} = 620\) juta Rp</strong>.</p>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">MAE - Uniform</label>
+                    <input type="number" id="err-mae-uni" class="form-input" placeholder="Masukkan nilai">
+                </div>
+                <div>
+                    <label class="meta-label">MAE - Weighted</label>
+                    <input type="number" id="err-mae-wei" class="form-input" placeholder="Masukkan nilai">
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">MSE - Uniform</label>
+                    <input type="number" id="err-mse-uni" class="form-input" placeholder="Masukkan nilai">
+                </div>
+                <div>
+                    <label class="meta-label">MSE - Weighted</label>
+                    <input type="number" id="err-mse-wei" class="form-input" placeholder="Masukkan nilai">
+                </div>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkErrors()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Error</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-errors')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Error</button>
+            </div>
+
+            <div id="reveal-errors" class="reveal-box">
+                <strong>Kunci Jawaban Error:</strong><br>
+                <ul>
+                    <li><strong>MAE (Uniform):</strong> \(|620 - 580| = \mathbf{40}\)</li>
+                    <li><strong>MAE (Weighted):</strong> \(|620 - 594| = \mathbf{26}\)</li>
+                    <li><strong>MSE (Uniform):</strong> \((620 - 580)^2 = \mathbf{1600}\)</li>
+                    <li><strong>MSE (Weighted):</strong> \((620 - 594)^2 = \mathbf{676}\)</li>
+                </ul>
+            </div>
+            
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>Pertanyaan 6:</strong> Dari ketiga metrik (MAE, MSE, MAPE), manakah yang paling cocok digunakan untuk melaporkan performa model prediksi harga rumah kepada klien awam (non-teknis)? Jelaskan alasannya!</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p6')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p6" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> MAE atau MAPE. MAE mengukur error dalam satuan harga asli secara langsung (juta Rupiah), sedangkan MAPE dalam persentase, keduanya mudah dipahami secara intuitif oleh klien awam. MSE tidak cocok karena satuannya kuadrat (\(Rupiah^2\)) yang tidak intuitif.
+            </div>
+        </div>
+
+        <!-- BAGIAN 10 & 11 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-triangle-exclamation"></i> BAGIAN 10 & 11: Curse of Dimensionality & Refleksi Akhir
+            </div>
+            
+            <p><strong>Pertanyaan 7:</strong> Jika model KNN prediksi harga rumah diperluas dengan menambahkan 50 fitur tambahan, jelaskan 3 dampak Curse of Dimensionality!</p>
+            <textarea class="form-input" style="margin-bottom: 1rem;" placeholder="Tulis analisis Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p7')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p7" class="reveal-box">
+                <strong>Kunci Jawaban:</strong>
+                <ol style="margin-left: 1.5rem;">
+                    <li><strong>Sparsity of Data:</strong> Data tersebar sangat renggang di ruang dimensi tinggi, membuat "tetangga terdekat" kehilangan relevansi lokalnya.</li>
+                    <li><strong>Euclidean Distance tidak efektif:</strong> Jarak antar data cenderung seragam dan mirip satu sama lain, sehingga menyulitkan pencarian kemiripan.</li>
+                    <li><strong>High Data Requirement:</strong> Kebutuhan data training meningkat secara eksponensial demi menjaga densitas pola.</li>
+                </ol>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>Pertanyaan 9 (Refleksi Akhir):</strong> Jelaskan perbedaan mendasar antara KNN untuk <strong>Klasifikasi</strong> dan KNN untuk <strong>Regresi</strong>!</p>
+            <textarea class="form-input" style="margin-bottom: 1rem;" placeholder="Tulis analisis Anda..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p9')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p9" class="reveal-box">
+                <strong>Kunci Jawaban:</strong>
+                <ul>
+                    <li><strong>Klasifikasi:</strong> Prediksi kelas kategorikal (diskrit) menggunakan voting mayoritas (mode) tetangga terdekat. Evaluasi menggunakan akurasi, F1-score, dll.</li>
+                    <li><strong>Regresi:</strong> Prediksi nilai kontinu (angka numerik) menggunakan rata-rata (uniform/weighted mean) tetangga terdekat. Evaluasi menggunakan MAE, MSE, MAPE, dll.</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP             -->
+    <!-- ============================================== -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap: Studi Kasus B
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">A. Perhitungan Jarak 1D mutlak dari \(X_{new} = 110\)</h3>
+            <ul>
+                <li>\(X_i = 100 \rightarrow |110 - 100| = \mathbf{10}\)</li>
+                <li>\(X_i = 120 \rightarrow |110 - 120| = \mathbf{10}\)</li>
+                <li>\(X_i = 90 \rightarrow |110 - 90| = \mathbf{20}\)</li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">B. Hasil Prediksi Uniform Average</h3>
+            <p>$$\hat{Y}_{uniform} = \frac{580 + 650 + 510}{3} = \mathbf{580}\text{ juta Rp}$$</p>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">C. Hasil Prediksi Weighted Average</h3>
+            <p>Bobot berbasis invers jarak:</p>
+            <ul>
+                <li>Bobot D4 (100 m²): \(w = 1/10 = 0.1 \rightarrow w \times Y = 58.0\)</li>
+                <li>Bobot D5 (120 m²): \(w = 1/10 = 0.1 \rightarrow w \times Y = 65.0\)</li>
+                <li>Bobot D3 (90 m²): \(w = 1/20 = 0.05 \rightarrow w \times Y = 25.5\)</li>
+                <li>Total Bobot = \(0.25\). Total bobot dikali harga = \(148.5\)</li>
+                <li>Prediksi Akhir = \(\frac{148.5}{0.25} = \mathbf{594}\text{ juta Rp}\)</li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">D. Hasil Analisis Error (Aktual = 620)</h3>
+            <ul>
+                <li><strong>MAE Uniform:</strong> \(|620 - 580| = \mathbf{40}\)</li>
+                <li><strong>MAE Weighted:</strong> \(|620 - 594| = \mathbf{26}\)</li>
+                <li><strong>MSE Uniform:</strong> \((620 - 580)^2 = \mathbf{1600}\)</li>
+                <li><strong>MSE Weighted:</strong> \((620 - 594)^2 = \mathbf{676}\)</li>
+            </ul>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    function toggleReveal(boxId) {
+        const box = document.getElementById(boxId);
+        box.classList.toggle('visible');
+    }
+
+    function checkRegDistances() {
+        const correctVals = {
+            'x60': 50, 'x75': 35, 'x90': 20, 'x100': 10, 'x120': 10,
+            'x135': 25, 'x150': 40, 'x160': 50, 'x180': 70, 'x200': 90
+        };
+
+        let correct = true;
+        for (const [key, value] of Object.entries(correctVals)) {
+            const inputVal = parseInt(document.getElementById(`dist-${key}`).value);
+            if (inputVal === value) {
+                markInput(`dist-${key}`, true);
+            } else {
+                markInput(`dist-${key}`, false);
+                correct = false;
+            }
+        }
+
+        if (correct) {
+            alert('Semua perhitungan jarak satu dimensi 100% Benar!');
+        } else {
+            alert('Ada beberapa nilai jarak yang salah. Coba hitung selisih mutlaknya lagi.');
+        }
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    function checkUniform() {
+        const pred = parseInt(document.getElementById('pred-uniform').value);
+        if (pred === 580) {
+            markInput('pred-uniform', true);
+            alert('Perhitungan Prediksi Uniform Anda Benar! (580 juta)');
+        } else {
+            markInput('pred-uniform', false);
+            alert('Salah. Petunjuk: Jumlahkan Y dari 3 tetangga terdekat lalu bagi 3.');
+        }
+    }
+
+    function checkWeighted() {
+        const x1 = parseInt(document.getElementById('w-x1').value);
+        const y1 = parseInt(document.getElementById('w-y1').value);
+        const w1 = parseFloat(document.getElementById('w-val1').value);
+        const mult1 = parseFloat(document.getElementById('w-mult1').value);
+
+        const x2 = parseInt(document.getElementById('w-x2').value);
+        const y2 = parseInt(document.getElementById('w-y2').value);
+        const w2 = parseFloat(document.getElementById('w-val2').value);
+        const mult2 = parseFloat(document.getElementById('w-mult2').value);
+
+        const x3 = parseInt(document.getElementById('w-x3').value);
+        const y3 = parseInt(document.getElementById('w-y3').value);
+        const w3 = parseFloat(document.getElementById('w-val3').value);
+        const mult3 = parseFloat(document.getElementById('w-mult3').value);
+
+        const totalPred = parseInt(document.getElementById('pred-weighted').value);
+
+        const isCorrect = (x1 === 100 && y1 === 580 && w1 === 0.1 && mult1 === 58) &&
+                          (x2 === 120 && y2 === 650 && w2 === 0.1 && mult2 === 65) &&
+                          (x3 === 90 && y3 === 510 && w3 === 0.05 && mult3 === 25.5) &&
+                          (totalPred === 594);
+
+        if (isCorrect) {
+            alert('Tabel dan hasil akhir prediksi Weighted Average Anda 100% Benar! (594 juta)');
+            markInput('w-x1', true); markInput('w-y1', true); markInput('w-val1', true); markInput('w-mult1', true);
+            markInput('w-x2', true); markInput('w-y2', true); markInput('w-val2', true); markInput('w-mult2', true);
+            markInput('w-x3', true); markInput('w-y3', true); markInput('w-val3', true); markInput('w-mult3', true);
+            markInput('pred-weighted', true);
+        } else {
+            alert('Ada kesalahan dalam tabel bobot atau total prediksi tertimbang Anda.');
+        }
+    }
+
+    function checkErrors() {
+        const maeUni = parseInt(document.getElementById('err-mae-uni').value);
+        const maeWei = parseInt(document.getElementById('err-mae-wei').value);
+        const mseUni = parseInt(document.getElementById('err-mse-uni').value);
+        const mseWei = parseInt(document.getElementById('err-mse-wei').value);
+
+        let correct = true;
+        if (maeUni === 40) markInput('err-mae-uni', true); else { markInput('err-mae-uni', false); correct = false; }
+        if (maeWei === 26) markInput('err-mae-wei', true); else { markInput('err-mae-wei', false); correct = false; }
+        if (mseUni === 1600) markInput('err-mse-uni', true); else { markInput('err-mse-uni', false); correct = false; }
+        if (mseWei === 676) markInput('err-mse-wei', true); else { markInput('err-mse-wei', false); correct = false; }
+
+        if (correct) {
+            alert('Semua perhitungan nilai error Anda 100% Benar!');
+        } else {
+            alert('Nilai error masih salah. Kurangi nilai prediksi Anda dari nilai aktual (620).');
+        }
+    }
+</script>
+
+</body>
+</html>

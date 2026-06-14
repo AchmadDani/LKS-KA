@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - K-Nearest Neighbors (Studi Kasus A)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header Card */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Main Section Container */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        /* Tables styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Inputs for Sheet */
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        /* Answer Reveal Buttons */
+        .reveal-box {
+            margin-top: 1.25rem;
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reveal-box.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .highlight-ans {
+            color: var(--success);
+            font-weight: 700;
+            background: var(--success-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-accent {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        /* Checkbox interactive items */
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Simulasi KNN (Dry Run)</h1>
+        <div class="subtitle">Mata Kuliah Kecerdasan Artifisial</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi Fokus</span>
+                <span class="meta-value">Studi Kasus A: KNN Klasifikasi</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: LEMBAR SOAL                       -->
+    <!-- ============================================== -->
+    <main id="soal-content" class="tab-content active">
+        
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-database"></i> Deskripsi Studi Kasus A: Prediksi Layak Kredit
+            </div>
+            <p>Sebuah perusahaan fintech ingin membangun sistem otomatis untuk menentukan apakah seorang calon nasabah <strong>layak</strong> mendapatkan kredit atau <strong>tidak layak</strong> berdasarkan dua fitur utama:</p>
+            <ul>
+                <li><strong>\(x_1\)</strong> = Penghasilan Bulanan (dalam juta rupiah)</li>
+                <li><strong>\(x_2\)</strong> = Skor Kredit (skala 0–100)</li>
+            </ul>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>x1 (Penghasilan)</th>
+                            <th>x2 (Skor Kredit)</th>
+                            <th>Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bold-white">D1</td>
+                            <td>3</td>
+                            <td>40</td>
+                            <td><span class="badge badge-danger">Tidak Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D2</td>
+                            <td>5</td>
+                            <td>55</td>
+                            <td><span class="badge badge-danger">Tidak Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D3</td>
+                            <td>4</td>
+                            <td>65</td>
+                            <td><span class="badge badge-success">Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D4</td>
+                            <td>7</td>
+                            <td>70</td>
+                            <td><span class="badge badge-success">Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D5</td>
+                            <td>6</td>
+                            <td>80</td>
+                            <td><span class="badge badge-success">Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D6</td>
+                            <td>2</td>
+                            <td>30</td>
+                            <td><span class="badge badge-danger">Tidak Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D7</td>
+                            <td>8</td>
+                            <td>75</td>
+                            <td><span class="badge badge-success">Layak</span></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D8</td>
+                            <td>3</td>
+                            <td>50</td>
+                            <td><span class="badge badge-danger">Tidak Layak</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Data Baru (\(X_{new}\)):</strong> \(x_1 = 5, x_2 = 68\).<br>
+                    <strong>Parameter:</strong> Gunakan \(K = 3\) dan metrik <strong>Euclidean Distance</strong>.
+                </div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 1 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-brain"></i> BAGIAN 1: Memahami Konsep Dasar
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <p><strong>Pertanyaan 1:</strong> Apa yang dimaksud dengan KNN sebagai <em>"Lazy Learning"</em>? Mengapa KNN tidak memiliki proses training seperti Decision Tree atau Neural Network?</p>
+                <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-p1')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+                <div id="reveal-p1" class="reveal-box">
+                    <strong>Kunci Jawaban:</strong> KNN disebut <em>Lazy Learning</em> karena tidak membangun model generalisasi secara eksplisit selama fase training. Algoritma ini hanya menyimpan seluruh data training di memori. Komputasi untuk memprediksi data baru baru akan dijalankan secara instan ketika proses query/testing dilakukan.
+                </div>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 1.5rem 0;">
+
+            <div>
+                <p><strong>Pertanyaan 2:</strong> Mengapa KNN lebih cocok digunakan dibanding Decision Tree ketika jumlah atribut (fitur) sangat banyak, misalnya pada klasifikasi gambar dengan 1000+ piksel?</p>
+                <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-p2')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+                <div id="reveal-p2" class="reveal-box">
+                    <strong>Kunci Jawaban:</strong> Ketika atribut sangat banyak, Decision Tree cenderung menghasilkan pohon keputusan yang sangat dalam, sangat kompleks, dan mudah mengalami <em>overfitting</em> karena harus menguji setiap fitur secara hierarkis. Sebaliknya, KNN bekerja dengan mengukur jarak geometris (kesamaan global) di seluruh ruang fitur tanpa perlu membentuk struktur percabangan yang rumit.
+                </div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-calculator"></i> BAGIAN 2: TAHAP 1 — Hitung Jarak (Euclidean Distance)
+            </div>
+            <p>Rumus Euclidean Distance antara data baru \(X_{new}\) dan setiap data training \(D_i\):</p>
+            <div class="math-block">
+                $$d(X_{new}, D_i) = \sqrt{(x1_{new} - x1_i)^2 + (x2_{new} - x2_i)^2}$$
+            </div>
+            <p>Isi nilai perhitungan jarak untuk data \(D_2\) sampai \(D_8\) di bawah ini:</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>x1</th>
+                            <th>x2</th>
+                            <th>(x1_new - x1_i)²</th>
+                            <th>(x2_new - x2_i)²</th>
+                            <th>Jumlah Kuadrat</th>
+                            <th>Jarak (d) Anda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bold-white">D1</td>
+                            <td>3</td>
+                            <td>40</td>
+                            <td>(5-3)² = 4</td>
+                            <td>(68-40)² = 784</td>
+                            <td>788</td>
+                            <td><input type="text" class="form-input-inline" value="28.07" disabled></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D2</td>
+                            <td>5</td>
+                            <td>55</td>
+                            <td><input type="text" class="form-input-inline" placeholder="0"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="169"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="169"></td>
+                            <td><input type="text" id="ans-d2" class="form-input-inline" placeholder="13.00"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D3</td>
+                            <td>4</td>
+                            <td>65</td>
+                            <td><input type="text" class="form-input-inline" placeholder="1"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="9"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="10"></td>
+                            <td><input type="text" id="ans-d3" class="form-input-inline" placeholder="3.16"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D4</td>
+                            <td>7</td>
+                            <td>70</td>
+                            <td><input type="text" class="form-input-inline" placeholder="4"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="4"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="8"></td>
+                            <td><input type="text" id="ans-d4" class="form-input-inline" placeholder="2.83"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D5</td>
+                            <td>6</td>
+                            <td>80</td>
+                            <td><input type="text" class="form-input-inline" placeholder="1"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="144"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="145"></td>
+                            <td><input type="text" id="ans-d5" class="form-input-inline" placeholder="12.04"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D6</td>
+                            <td>2</td>
+                            <td>30</td>
+                            <td><input type="text" class="form-input-inline" placeholder="9"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="1444"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="1453"></td>
+                            <td><input type="text" id="ans-d6" class="form-input-inline" placeholder="38.12"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D7</td>
+                            <td>8</td>
+                            <td>75</td>
+                            <td><input type="text" class="form-input-inline" placeholder="9"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="49"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="58"></td>
+                            <td><input type="text" id="ans-d7" class="form-input-inline" placeholder="7.62"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D8</td>
+                            <td>3</td>
+                            <td>50</td>
+                            <td><input type="text" class="form-input-inline" placeholder="4"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="324"></td>
+                            <td><input type="text" class="form-input-inline" placeholder="328"></td>
+                            <td><input type="text" id="ans-d8" class="form-input-inline" placeholder="18.11"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkDistances()"><i class="fa-solid fa-circle-check"></i> Cek Nilai Jarak</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-distances')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Jarak</button>
+            </div>
+            
+            <div id="reveal-distances" class="reveal-box">
+                <strong>Kunci Jawaban Jarak (d):</strong><br>
+                <ul>
+                    <li>D1: 28.07</li>
+                    <li>D2: 13.00 (\(\sqrt{169}\))</li>
+                    <li>D3: 3.16 (\(\sqrt{10}\))</li>
+                    <li>D4: 2.83 (\(\sqrt{8}\))</li>
+                    <li>D5: 12.04 (\(\sqrt{145}\))</li>
+                    <li>D6: 38.12 (\(\sqrt{1453}\))</li>
+                    <li>D7: 7.62 (\(\sqrt{58}\))</li>
+                    <li>D8: 18.11 (\(\sqrt{328}\))</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- BAGIAN 3 & 4 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-arrow-down-1-9"></i> BAGIAN 3 & 4: Urutkan Tetangga & Voting (K = 3)
+            </div>
+            
+            <p><strong>Pilih 3 Tetangga Terdekat (Peringkat 1-3):</strong></p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Tetangga 1 (Terdekat)</label>
+                    <input type="text" id="nn1-id" class="form-input" style="margin-bottom: 0.5rem;" placeholder="Contoh: D4">
+                    <input type="text" id="nn1-dist" class="form-input" placeholder="Jarak, misal: 2.83">
+                </div>
+                <div>
+                    <label class="meta-label">Tetangga 2</label>
+                    <input type="text" id="nn2-id" class="form-input" style="margin-bottom: 0.5rem;" placeholder="Contoh: D3">
+                    <input type="text" id="nn2-dist" class="form-input" placeholder="Jarak, misal: 3.16">
+                </div>
+                <div>
+                    <label class="meta-label">Tetangga 3</label>
+                    <input type="text" id="nn3-id" class="form-input" style="margin-bottom: 0.5rem;" placeholder="Contoh: D7">
+                    <input type="text" id="nn3-dist" class="form-input" placeholder="Jarak, misal: 7.62">
+                </div>
+            </div>
+
+            <p><strong>Hasil Voting untuk K = 3:</strong></p>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <label class="meta-label">Jumlah Suara "Layak"</label>
+                    <input type="number" id="vote-layak" class="form-input" placeholder="0">
+                </div>
+                <div>
+                    <label class="meta-label">Jumlah Suara "Tidak Layak"</label>
+                    <input type="number" id="vote-tidak" class="form-input" placeholder="0">
+                </div>
+            </div>
+
+            <p><strong>Keputusan Akhir Klasifikasi (K=3):</strong></p>
+            <input type="text" id="decision-k3" class="form-input" style="margin-bottom: 1rem;" placeholder="Layak / Tidak Layak">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkVotingK3()"><i class="fa-solid fa-circle-check"></i> Cek Hasil Voting</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-k3')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Jawaban K=3</button>
+            </div>
+
+            <div id="reveal-k3" class="reveal-box">
+                <strong>Kunci Jawaban K=3:</strong><br>
+                <ul>
+                    <li>Tetangga terdekat: <strong>D4</strong> (d=2.83), <strong>D3</strong> (d=3.16), dan <strong>D7</strong> (d=7.62).</li>
+                    <li>Semua 3 tetangga memiliki label <span class="highlight-ans">Layak</span>.</li>
+                    <li>Voting: Layak = 3, Tidak Layak = 0.</li>
+                    <li>Keputusan Akhir: <span class="highlight-ans">Layak</span>.</li>
+                </ul>
+            </div>
+            
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>Pertanyaan 3:</strong> Apa yang terjadi jika terjadi <em>tie</em> (seri) pada proses voting? Misalnya K = 4 dan hasilnya 2 vs 2. Bagaimana KNN menangani kondisi ini?</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p3')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p3" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Jika terjadi seri, KNN dapat mengatasinya dengan:
+                <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>Menggunakan voting berbobot (weighted voting) berdasarkan kebalikan jarak (\(1/d\)).</li>
+                    <li>Memilih kelas dari tetangga terdekat secara absolut yang memiliki jarak terkecil.</li>
+                    <li>Mengurangi nilai K sebesar 1 (dari K=4 menjadi K=3) dan mem-vote ulang.</li>
+                    <li>Memilih kelas secara acak (random) sebagai alternatif terakhir.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- BAGIAN 5 -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-sliders"></i> BAGIAN 5: TAHAP 4 — Eksperimen Nilai K = 5
+            </div>
+            <p>Gunakan peringkat tetangga terdekat 1 sampai 5 dari perhitungan sebelumnya:</p>
+
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <label class="meta-label">Suara "Layak" (K=5)</label>
+                    <input type="number" id="vote-layak-k5" class="form-input" placeholder="0">
+                </div>
+                <div>
+                    <label class="meta-label">Suara "Tidak Layak" (K=5)</label>
+                    <input type="number" id="vote-tidak-k5" class="form-input" placeholder="0">
+                </div>
+            </div>
+
+            <p><strong>Keputusan Akhir Klasifikasi (K=5):</strong></p>
+            <input type="text" id="decision-k5" class="form-input" style="margin-bottom: 1.5rem;" placeholder="Layak / Tidak Layak">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkVotingK5()"><i class="fa-solid fa-circle-check"></i> Cek Hasil K=5</button>
+                <button class="btn-reveal" onclick="toggleReveal('reveal-k5')"><i class="fa-solid fa-eye"></i> Tampilkan Kunci Jawaban K=5</button>
+            </div>
+
+            <div id="reveal-k5" class="reveal-box">
+                <strong>Kunci Jawaban K=5:</strong><br>
+                <ul>
+                    <li>5 tetangga terdekat: <strong>D4</strong> (2.83), <strong>D3</strong> (3.16), <strong>D7</strong> (7.62), <strong>D5</strong> (12.04), dan <strong>D2</strong> (13.00).</li>
+                    <li>Label tetangga: D4 (Layak), D3 (Layak), D7 (Layak), D5 (Layak), D2 (Tidak Layak).</li>
+                    <li>Voting: Layak = 4, Tidak Layak = 1.</li>
+                    <li>Keputusan Akhir: <span class="highlight-ans">Layak</span>.</li>
+                </ul>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <p><strong>Pertanyaan 4:</strong> Apakah hasil prediksi berubah antara K=3 dan K=5? Jelaskan bagaimana pemilihan nilai K mempengaruhi risiko <em>overfitting</em> dan <em>underfitting</em> pada model KNN!</p>
+            <textarea class="form-input" placeholder="Tulis jawaban Anda di sini..."></textarea>
+            <button class="btn-reveal" onclick="toggleReveal('reveal-p4')"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            <div id="reveal-p4" class="reveal-box">
+                <strong>Kunci Jawaban:</strong> Hasil prediksi tidak berubah (tetap "Layak"). Pengaruh nilai K:
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>K terlalu kecil (misal K=1):</strong> Batas keputusan sangat berliku dan sensitif terhadap noise/pencilan. Hal ini menyebabkan risiko <strong>overfitting</strong> tinggi.</li>
+                    <li><strong>K terlalu besar (misal K mendekati jumlah data):</strong> Batas keputusan menjadi terlalu mulus (oversmoothed) dan didominasi kelas mayoritas global. Hal ini menyebabkan risiko <strong>underfitting</strong> tinggi.</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP             -->
+    <!-- ============================================== -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap: Studi Kasus A
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">A. Hasil Perhitungan Jarak Euclidean</h3>
+            <p>Jarak dihitung dari data baru \(X_{new}(5, 68)\) ke setiap titik data training menggunakan rumus Euclidean Distance.</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>x1</th>
+                            <th>x2</th>
+                            <th>Rumus Perhitungan Jarak</th>
+                            <th>Hasil Jarak (d)</th>
+                            <th>Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bold-white">D1</td>
+                            <td>3</td>
+                            <td>40</td>
+                            <td>\(\sqrt{(5-3)^2 + (68-40)^2} = \sqrt{4 + 784}\)</td>
+                            <td class="bold-white">28.07</td>
+                            <td>Tidak Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D2</td>
+                            <td>5</td>
+                            <td>55</td>
+                            <td>\(\sqrt{(5-5)^2 + (68-55)^2} = \sqrt{0 + 169}\)</td>
+                            <td class="bold-white" style="color: var(--warning);">13.00</td>
+                            <td>Tidak Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D3</td>
+                            <td>4</td>
+                            <td>65</td>
+                            <td>\(\sqrt{(5-4)^2 + (68-65)^2} = \sqrt{1 + 9}\)</td>
+                            <td class="bold-white" style="color: var(--success);">3.16</td>
+                            <td>Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D4</td>
+                            <td>7</td>
+                            <td>70</td>
+                            <td>\(\sqrt{(5-7)^2 + (68-70)^2} = \sqrt{4 + 4}\)</td>
+                            <td class="bold-white" style="color: var(--success);">2.83</td>
+                            <td>Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D5</td>
+                            <td>6</td>
+                            <td>80</td>
+                            <td>\(\sqrt{(5-6)^2 + (68-80)^2} = \sqrt{1 + 144}\)</td>
+                            <td class="bold-white" style="color: var(--warning);">12.04</td>
+                            <td>Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D6</td>
+                            <td>2</td>
+                            <td>30</td>
+                            <td>\(\sqrt{(5-2)^2 + (68-30)^2} = \sqrt{9 + 1444}\)</td>
+                            <td class="bold-white">38.12</td>
+                            <td>Tidak Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D7</td>
+                            <td>8</td>
+                            <td>75</td>
+                            <td>\(\sqrt{(5-8)^2 + (68-75)^2} = \sqrt{9 + 49}\)</td>
+                            <td class="bold-white" style="color: var(--success);">7.62</td>
+                            <td>Layak</td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">D8</td>
+                            <td>3</td>
+                            <td>50</td>
+                            <td>\(\sqrt{(5-3)^2 + (68-50)^2} = \sqrt{4 + 324}\)</td>
+                            <td class="bold-white">18.11</td>
+                            <td>Tidak Layak</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">B. Pengurutan Jarak dari Terkecil (Peringkat Tetangga)</h3>
+            <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
+                <li><strong>D4</strong> (Jarak = 2.83) — <span class="badge badge-success">Layak</span></li>
+                <li><strong>D3</strong> (Jarak = 3.16) — <span class="badge badge-success">Layak</span></li>
+                <li><strong>D7</strong> (Jarak = 7.62) — <span class="badge badge-success">Layak</span></li>
+                <li><strong>D5</strong> (Jarak = 12.04) — <span class="badge badge-success">Layak</span></li>
+                <li><strong>D2</strong> (Jarak = 13.00) — <span class="badge badge-danger">Tidak Layak</span></li>
+                <li><strong>D8</strong> (Jarak = 18.11) — <span class="badge badge-danger">Tidak Layak</span></li>
+                <li><strong>D1</strong> (Jarak = 28.07) — <span class="badge badge-danger">Tidak Layak</span></li>
+                <li><strong>D6</strong> (Jarak = 38.12) — <span class="badge badge-danger">Tidak Layak</span></li>
+            </ol>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">C. Analisis Klasifikasi K=3</h3>
+            <p>Tiga tetangga terdekat terpilih adalah <strong>D4, D3, dan D7</strong>. Semuanya memiliki kelas "Layak".</p>
+            <p><strong>Voting:</strong> Layak (3 suara) vs Tidak Layak (0 suara).<br><strong>Hasil Prediksi:</strong> <span class="highlight-ans">Layak</span>.</p>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">D. Analisis Klasifikasi K=5</h3>
+            <p>Lima tetangga terdekat terpilih adalah <strong>D4, D3, D7, D5, dan D2</strong>.</p>
+            <p><strong>Voting:</strong> Layak (4 suara: D4, D3, D7, D5) vs Tidak Layak (1 suara: D2).<br><strong>Hasil Prediksi:</strong> <span class="highlight-ans">Layak</span>.</p>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    // Tab Navigation Logic
+    function switchTab(tabId) {
+        // Toggle Buttons
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        // Toggle Content
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    // Toggle Visibility of Answer Boxes
+    function toggleReveal(boxId) {
+        const box = document.getElementById(boxId);
+        box.classList.toggle('visible');
+    }
+
+    // Interactive Distance Checking
+    function checkDistances() {
+        const d2 = parseFloat(document.getElementById('ans-d2').value);
+        const d3 = parseFloat(document.getElementById('ans-d3').value);
+        const d4 = parseFloat(document.getElementById('ans-d4').value);
+        const d5 = parseFloat(document.getElementById('ans-d5').value);
+        const d6 = parseFloat(document.getElementById('ans-d6').value);
+        const d7 = parseFloat(document.getElementById('ans-d7').value);
+        const d8 = parseFloat(document.getElementById('ans-d8').value);
+
+        let correct = true;
+        
+        if (d2 === 13) markInput('ans-d2', true); else { markInput('ans-d2', false); correct = false; }
+        if (d3 === 3.16) markInput('ans-d3', true); else { markInput('ans-d3', false); correct = false; }
+        if (d4 === 2.83) markInput('ans-d4', true); else { markInput('ans-d4', false); correct = false; }
+        if (d5 === 12.04) markInput('ans-d5', true); else { markInput('ans-d5', false); correct = false; }
+        if (d6 === 38.12) markInput('ans-d6', true); else { markInput('ans-d6', false); correct = false; }
+        if (d7 === 7.62) markInput('ans-d7', true); else { markInput('ans-d7', false); correct = false; }
+        if (d8 === 18.11) markInput('ans-d8', true); else { markInput('ans-d8', false); correct = false; }
+
+        if (correct) {
+            alert('Luar biasa! Semua nilai jarak Anda 100% Benar!');
+        } else {
+            alert('Beberapa nilai jarak masih salah atau belum presisi. Cek kembali perhitungan pembulatan 2 desimal Anda.');
+        }
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    // Check Voting answers
+    function checkVotingK3() {
+        const id1 = document.getElementById('nn1-id').value.toUpperCase().trim();
+        const id2 = document.getElementById('nn2-id').value.toUpperCase().trim();
+        const id3 = document.getElementById('nn3-id').value.toUpperCase().trim();
+        
+        const dist1 = parseFloat(document.getElementById('nn1-dist').value);
+        const dist2 = parseFloat(document.getElementById('nn2-dist').value);
+        const dist3 = parseFloat(document.getElementById('nn3-dist').value);
+
+        const vLayak = parseInt(document.getElementById('vote-layak').value);
+        const vTidak = parseInt(document.getElementById('vote-tidak').value);
+        const dec = document.getElementById('decision-k3').value.trim().toLowerCase();
+
+        let isCorrect = (id1 === 'D4' && id2 === 'D3' && id3 === 'D7') && 
+                        (dist1 === 2.83 && dist2 === 3.16 && dist3 === 7.62) &&
+                        (vLayak === 3 && vTidak === 0) &&
+                        (dec === 'layak');
+
+        if (isCorrect) {
+            alert('Jawaban K=3 Anda Benar!');
+            markInput('nn1-id', true);
+            markInput('nn2-id', true);
+            markInput('nn3-id', true);
+            markInput('vote-layak', true);
+            markInput('vote-tidak', true);
+            markInput('decision-k3', true);
+        } else {
+            alert('Ada jawaban yang kurang tepat pada pemilihan tetangga terdekat atau voting suara.');
+        }
+    }
+
+    function checkVotingK5() {
+        const vLayak = parseInt(document.getElementById('vote-layak-k5').value);
+        const vTidak = parseInt(document.getElementById('vote-tidak-k5').value);
+        const dec = document.getElementById('decision-k5').value.trim().toLowerCase();
+
+        let isCorrect = (vLayak === 4 && vTidak === 1) && (dec === 'layak');
+
+        if (isCorrect) {
+            alert('Jawaban K=5 Anda Benar!');
+            markInput('vote-layak-k5', true);
+            markInput('vote-tidak-k5', true);
+            markInput('decision-k5', true);
+        } else {
+            alert('Hasil voting K=5 atau keputusan akhir Anda masih kurang tepat.');
+        }
+    }
+</script>
+
+</body>
+</html>
