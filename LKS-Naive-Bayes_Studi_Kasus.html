@@ -440,6 +440,114 @@
             color: var(--text-primary);
             font-weight: 600;
         }
+
+        .btn-print-pdf {
+            background: var(--warning) !important;
+            color: white !important;
+            border: none;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.5rem;
+            transition: all 0.2s;
+        }
+        .btn-print-pdf:hover {
+            background: #d97706 !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transform: translateY(-1px);
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            header {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                padding: 1.5rem !important;
+            }
+            header::before {
+                display: none;
+            }
+            h1 {
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+                color: #000000 !important;
+                font-size: 1.75rem !important;
+            }
+            .subtitle {
+                color: #555555 !important;
+            }
+            .meta-grid {
+                background: #f3f4f6 !important;
+                border: 1px solid #cccccc !important;
+            }
+            .meta-value {
+                color: #000000 !important;
+            }
+            .card {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                page-break-inside: avoid;
+            }
+            .card-title {
+                color: #000000 !important;
+                border-bottom: 1px solid #cccccc !important;
+            }
+            .card-title i {
+                color: #000000 !important;
+            }
+            p, td, th, label, li {
+                color: #000000 !important;
+            }
+            .form-input, .form-input-inline {
+                background: #ffffff !important;
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .tab-nav, .check-btn-container, .btn-reveal, .reveal-box, footer {
+                display: none !important;
+            }
+            .badge {
+                display: inline-block !important;
+                background: transparent !important;
+                color: #000000 !important;
+                border: none !important;
+                padding: 0 !important;
+                font-weight: bold !important;
+            }
+            .tab-content {
+                display: none !important;
+            }
+            .tab-content.active {
+                display: block !important;
+            }
+            table {
+                border: 1px solid #000000 !important;
+            }
+            th, td {
+                border-bottom: 1px solid #000000 !important;
+                border-right: 1px solid #000000 !important;
+            }
+            th {
+                background: #f3f4f6 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -472,6 +580,9 @@
         </button>
         <button class="tab-btn" onclick="switchTab('kunci')">
             <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+        <button class="tab-btn btn-print-pdf" onclick="printToPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Cetak PDF
         </button>
     </nav>
 
@@ -936,6 +1047,56 @@
 
         if (correct) alert('Jawaban Text Preprocessing Anda Benar!');
         else alert('Cek kembali daftar kata Vocabulary dan rumus unknown words.');
+    }
+
+    function revealAll() {
+        document.getElementById('prior-yes').value = '9/14';
+        document.getElementById('prior-no').value = '5/14';
+        document.getElementById('like-hot-yes').value = '0';
+        document.getElementById('like-over-no').value = '0';
+        checkZeroFreq();
+
+        document.getElementById('l-sun-yes').value = '3/12';
+        document.getElementById('l-over-yes').value = '5/12';
+        document.getElementById('l-over-no').value = '1/8';
+        document.getElementById('l-hot-yes').value = '1/12';
+        document.getElementById('l-hot-no').value = '3/8';
+        checkLaplace();
+
+        document.getElementById('score-yes').value = '0.0034';
+        document.getElementById('score-no').value = '0.0084';
+        document.getElementById('dec-a').value = 'no';
+        checkMAP();
+
+        document.getElementById('g-bat-no').value = '0';
+        document.getElementById('g-cam-no').value = '0.2173';
+        document.getElementById('g-prc-no').value = '0.0101';
+        document.getElementById('g-bat-yes').value = '0.0116';
+        document.getElementById('g-cam-yes').value = '0.0039';
+        document.getElementById('g-prc-yes').value = '0.0754';
+        checkGaussian();
+
+        document.getElementById('dec-b').value = 'yes';
+        checkMAPGaussian();
+
+        document.getElementById('txt-words').value = 'bad, like, hate';
+        document.getElementById('txt-ted-pos').value = '1/24';
+        document.getElementById('txt-ted-neg').value = '1/22';
+        checkTextPrep();
+    }
+
+    function printToPDF() {
+        const originalAlert = window.alert;
+        window.alert = function() {};
+        try {
+            revealAll();
+        } finally {
+            window.alert = originalAlert;
+        }
+        switchTab('soal');
+        setTimeout(() => {
+            window.print();
+        }, 300);
     }
 </script>
 
