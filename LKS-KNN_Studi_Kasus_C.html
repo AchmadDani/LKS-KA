@@ -453,6 +453,114 @@
             line-height: 1.2;
             margin: 1rem 0;
         }
+
+        .btn-print-pdf {
+            background: var(--warning) !important;
+            color: white !important;
+            border: none;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.5rem;
+            transition: all 0.2s;
+        }
+        .btn-print-pdf:hover {
+            background: #d97706 !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transform: translateY(-1px);
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            header {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                padding: 1.5rem !important;
+            }
+            header::before {
+                display: none;
+            }
+            h1 {
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+                color: #000000 !important;
+                font-size: 1.75rem !important;
+            }
+            .subtitle {
+                color: #555555 !important;
+            }
+            .meta-grid {
+                background: #f3f4f6 !important;
+                border: 1px solid #cccccc !important;
+            }
+            .meta-value {
+                color: #000000 !important;
+            }
+            .card {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                page-break-inside: avoid;
+            }
+            .card-title {
+                color: #000000 !important;
+                border-bottom: 1px solid #cccccc !important;
+            }
+            .card-title i {
+                color: #000000 !important;
+            }
+            p, td, th, label, li {
+                color: #000000 !important;
+            }
+            .form-input, .form-input-inline {
+                background: #ffffff !important;
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .tab-nav, .check-btn-container, .btn-reveal, .reveal-box, footer {
+                display: none !important;
+            }
+            .badge {
+                display: inline-block !important;
+                background: transparent !important;
+                color: #000000 !important;
+                border: none !important;
+                padding: 0 !important;
+                font-weight: bold !important;
+            }
+            .tab-content {
+                display: none !important;
+            }
+            .tab-content.active {
+                display: block !important;
+            }
+            table {
+                border: 1px solid #000000 !important;
+            }
+            th, td {
+                border-bottom: 1px solid #000000 !important;
+                border-right: 1px solid #000000 !important;
+            }
+            th {
+                background: #f3f4f6 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -485,6 +593,9 @@
         </button>
         <button class="tab-btn" onclick="switchTab('kunci')">
             <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+        <button class="tab-btn btn-print-pdf" onclick="printToPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Cetak PDF
         </button>
     </nav>
 
@@ -1087,6 +1198,59 @@ IPK
         } else {
             alert('Beberapa isian kesimpulan masih kurang tepat.');
         }
+    }
+
+    function revealAll() {
+        document.getElementById('dist-m1').value = '3.03';
+        document.getElementById('dist-m2').value = '2.02';
+        document.getElementById('dist-m3').value = '1.00';
+        document.getElementById('dist-m4').value = '3.06';
+        document.getElementById('dist-m5').value = '2.06';
+        document.getElementById('dist-m6').value = '4.02';
+        checkEuclideanDist();
+
+        document.getElementById('sort-id1').value = 'M3 - Layak';
+        document.getElementById('sort-id2').value = 'M2 - Layak';
+        document.getElementById('sort-id3').value = 'M5 - Tidak Layak';
+        document.getElementById('vote-layak-c').value = '2';
+        document.getElementById('vote-tidak-c').value = '1';
+        document.getElementById('final-dec-c').value = 'layak';
+        checkK3Voting();
+
+        document.getElementById('exp-k1').value = 'layak';
+        document.getElementById('exp-k5').value = 'layak';
+        checkKExp();
+
+        document.getElementById('man-m1').value = '3.4';
+        document.getElementById('man-m2').value = '2.3';
+        document.getElementById('man-m3').value = '1.1';
+        document.getElementById('man-m4').value = '3.6';
+        document.getElementById('man-m5').value = '2.5';
+        document.getElementById('man-m6').value = '4.4';
+        checkManhattanDist();
+
+        document.getElementById('kes-1').value = 'Supervised / Lazy Learning';
+        document.getElementById('kes-2').value = 'menyimpan seluruh data ke memori';
+        document.getElementById('kes-3').value = 'mirip / serupa';
+        document.getElementById('kes-4').value = 'tetangga terdekat';
+        document.getElementById('kes-5').value = 'majority voting';
+        document.getElementById('kes-6a').value = 'Euclidean Distance';
+        document.getElementById('kes-6b').value = 'Manhattan Distance';
+        checkConclusions();
+    }
+
+    function printToPDF() {
+        const originalAlert = window.alert;
+        window.alert = function() {};
+        try {
+            revealAll();
+        } finally {
+            window.alert = originalAlert;
+        }
+        switchTab('soal');
+        setTimeout(() => {
+            window.print();
+        }, 300);
     }
 </script>
 

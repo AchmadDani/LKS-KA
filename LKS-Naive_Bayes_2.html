@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - Naïve Bayes untuk Kategorikal (LKS 2)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .btn-print-pdf {
+            background: var(--warning) !important;
+            color: white !important;
+            border: none;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.5rem;
+            transition: all 0.2s;
+        }
+        .btn-print-pdf:hover {
+            background: #d97706 !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transform: translateY(-1px);
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            header {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                padding: 1.5rem !important;
+            }
+            header::before {
+                display: none;
+            }
+            h1 {
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+                color: #000000 !important;
+                font-size: 1.75rem !important;
+            }
+            .subtitle {
+                color: #555555 !important;
+            }
+            .meta-grid {
+                background: #f3f4f6 !important;
+                border: 1px solid #cccccc !important;
+            }
+            .meta-value {
+                color: #000000 !important;
+            }
+            .card {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                page-break-inside: avoid;
+            }
+            .card-title {
+                color: #000000 !important;
+                border-bottom: 1px solid #cccccc !important;
+            }
+            .card-title i {
+                color: #000000 !important;
+            }
+            p, td, th, label, li {
+                color: #000000 !important;
+            }
+            .form-input, .form-input-inline {
+                background: #ffffff !important;
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .tab-nav, .check-btn-container, .btn-reveal, .reveal-box, footer {
+                display: none !important;
+            }
+            .badge {
+                display: inline-block !important;
+                background: transparent !important;
+                color: #000000 !important;
+                border: none !important;
+                padding: 0 !important;
+                font-weight: bold !important;
+            }
+            .tab-content {
+                display: none !important;
+            }
+            .tab-content.active {
+                display: block !important;
+            }
+            table {
+                border: 1px solid #000000 !important;
+            }
+            th, td {
+                border-bottom: 1px solid #000000 !important;
+                border-right: 1px solid #000000 !important;
+            }
+            th {
+                background: #f3f4f6 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Mahasiswa (LKM) - Naïve Bayes Kategorikal</h1>
+        <div class="subtitle">Mata Kuliah: Kecerdasan Artificial</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi</span>
+                <span class="meta-value">Naïve Bayes Kategorikal (Play Tennis & Smartphone)</span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+        <button class="tab-btn btn-print-pdf" onclick="printToPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Cetak PDF
+        </button>
+    </nav>
+
+    <!-- TAB CONTENT: LEMBAR SOAL -->
+    <main id="soal-content" class="tab-content active">
+        
+        <!-- BAGIAN 1: Memahami Prior dan Likelihood -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-cloud-sun-rain"></i> BAGIAN 1 — Memahami Prior dan Likelihood (Play Tennis)
+            </div>
+            <p>Dataset Play Tennis digunakan untuk memprediksi apakah seseorang bermain tenis berdasarkan cuaca:</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Outlook</th>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Wind</th>
+                            <th>Play Tennis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>Sunny</td><td>Hot</td><td>High</td><td>Weak</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>2</td><td>Sunny</td><td>Hot</td><td>High</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>3</td><td>Overcast</td><td>Hot</td><td>High</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>4</td><td>Rain</td><td>Mild</td><td>High</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>5</td><td>Rain</td><td>Cool</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>6</td><td>Rain</td><td>Cool</td><td>Normal</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>7</td><td>Overcast</td><td>Cool</td><td>Normal</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>8</td><td>Sunny</td><td>Mild</td><td>High</td><td>Weak</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>9</td><td>Sunny</td><td>Cool</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>10</td><td>Rain</td><td>Mild</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>11</td><td>Sunny</td><td>Mild</td><td>Normal</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>12</td><td>Overcast</td><td>Mild</td><td>High</td><td>Strong</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>13</td><td>Overcast</td><td>Hot</td><td>Normal</td><td>Weak</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>14</td><td>Rain</td><td>Mild</td><td>High</td><td>Strong</td><td><span class="badge badge-danger">No</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Aktivitas 1 — Menghitung Prior Probability</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">1. Total Data Keseluruhan</label>
+                    <input type="text" id="total-data" class="form-input" placeholder="14">
+                </div>
+                <div>
+                    <label class="meta-label">2. Jumlah Data Class Yes</label>
+                    <input type="text" id="total-yes" class="form-input" placeholder="9">
+                </div>
+                <div>
+                    <label class="meta-label">3. Jumlah Data Class No</label>
+                    <input type="text" id="total-no" class="form-input" placeholder="5">
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 1.5rem;">
+                <div>
+                    <label class="meta-label">P(Yes) = Jumlah Yes / Total Data</label>
+                    <input type="text" id="prior-yes" class="form-input" placeholder="0.6429">
+                </div>
+                <div>
+                    <label class="meta-label">P(No) = Jumlah No / Total Data</label>
+                    <input type="text" id="prior-no" class="form-input" placeholder="0.3571">
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top: 1.5rem;">
+                <button class="btn-check" onclick="checkPrior()"><i class="fa-solid fa-circle-check"></i> Cek Prior</button>
+                <button class="btn-reveal" onclick="revealPrior()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary);">Aktivitas 2 — Likelihood Feature Outlook</h3>
+            <p>Lengkapi tabel hitung Outlook terhadap kelas Yes / No (gunakan format desimal 4 angka di belakang koma, misal: 0.2222):</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Outlook</th>
+                            <th>Count (Yes)</th>
+                            <th>P(Outlook | Yes)</th>
+                            <th>Count (No)</th>
+                            <th>P(Outlook | No)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bold-white">Sunny</td>
+                            <td><input type="text" id="count-sun-yes" class="form-input-inline" placeholder="2"></td>
+                            <td><input type="text" id="p-sun-yes" class="form-input-inline" placeholder="0.2222"></td>
+                            <td><input type="text" id="count-sun-no" class="form-input-inline" placeholder="3"></td>
+                            <td><input type="text" id="p-sun-no" class="form-input-inline" placeholder="0.6"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">Overcast</td>
+                            <td><input type="text" id="count-over-yes" class="form-input-inline" placeholder="4"></td>
+                            <td><input type="text" id="p-over-yes" class="form-input-inline" placeholder="0.4444"></td>
+                            <td><input type="text" id="count-over-no" class="form-input-inline" placeholder="0"></td>
+                            <td><input type="text" id="p-over-no" class="form-input-inline" placeholder="0.0"></td>
+                        </tr>
+                        <tr>
+                            <td class="bold-white">Rain</td>
+                            <td><input type="text" id="count-rain-yes" class="form-input-inline" placeholder="3"></td>
+                            <td><input type="text" id="p-rain-yes" class="form-input-inline" placeholder="0.3333"></td>
+                            <td><input type="text" id="count-rain-no" class="form-input-inline" placeholder="2"></td>
+                            <td><input type="text" id="p-rain-no" class="form-input-inline" placeholder="0.4"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkOutlook()"><i class="fa-solid fa-circle-check"></i> Cek Likelihood Outlook</button>
+                <button class="btn-reveal" onclick="revealOutlook()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+            
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Refleksi Bagian 1</h3>
+            <div style="margin-top: 1rem;">
+                <p><strong>1. Nilai Outlook apa yang paling sering muncul pada class Yes?</strong></p>
+                <input type="text" id="ref1-1" class="form-input" placeholder="Overcast" style="margin-bottom: 1rem;">
+                <p><strong>2. Nilai Outlook apa yang paling sering muncul pada class No?</strong></p>
+                <input type="text" id="ref1-2" class="form-input" placeholder="Sunny" style="margin-bottom: 1rem;">
+                <p><strong>3. Apakah Outlook membantu menentukan keputusan? Jelaskan alasannya:</strong></p>
+                <textarea id="ref1-3" class="form-input" placeholder="Ya, karena Overcast selalu menghasilkan class Yes, dan Outlook Sunny cenderung No."></textarea>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2: Perhitungan Lengkap CPT & Prediksi -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-calculator"></i> BAGIAN 2 — Formula dan Perhitungan Lengkap (Tanpa Smoothing)
+            </div>
+            <p>Lengkapi Conditional Probability Table (CPT) lainnya (desimal 4 angka di belakang koma):</p>
+
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Temperature</h4>
+                    <label class="meta-label">P(Hot | Yes)</label>
+                    <input type="text" id="p-temp-hot-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.2222">
+                    <label class="meta-label">P(Hot | No)</label>
+                    <input type="text" id="p-temp-hot-no" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4">
+                    <label class="meta-label">P(Mild | Yes)</label>
+                    <input type="text" id="p-temp-mild-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4444">
+                    <label class="meta-label">P(Mild | No)</label>
+                    <input type="text" id="p-temp-mild-no" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4">
+                    <label class="meta-label">P(Cool | Yes)</label>
+                    <input type="text" id="p-temp-cool-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                    <label class="meta-label">P(Cool | No)</label>
+                    <input type="text" id="p-temp-cool-no" class="form-input" placeholder="0.2">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Humidity</h4>
+                    <label class="meta-label">P(High | Yes)</label>
+                    <input type="text" id="p-hum-high-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                    <label class="meta-label">P(High | No)</label>
+                    <input type="text" id="p-hum-high-no" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.8">
+                    <label class="meta-label">P(Normal | Yes)</label>
+                    <input type="text" id="p-hum-norm-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.6667">
+                    <label class="meta-label">P(Normal | No)</label>
+                    <input type="text" id="p-hum-norm-no" class="form-input" placeholder="0.2">
+                </div>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Wind</h4>
+                <div class="grid-2">
+                    <div>
+                        <label class="meta-label">P(Weak | Yes)</label>
+                        <input type="text" id="p-wind-weak-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.6667">
+                        <label class="meta-label">P(Weak | No)</label>
+                        <input type="text" id="p-wind-weak-no" class="form-input" placeholder="0.4">
+                    </div>
+                    <div>
+                        <label class="meta-label">P(Strong | Yes)</label>
+                        <input type="text" id="p-wind-str-yes" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                        <label class="meta-label">P(Strong | No)</label>
+                        <input type="text" id="p-wind-str-no" class="form-input" placeholder="0.6">
+                    </div>
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top:1.5rem;">
+                <button class="btn-check" onclick="checkCPT1()"><i class="fa-solid fa-circle-check"></i> Cek CPT</button>
+                <button class="btn-reveal" onclick="revealCPT1()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary);">Aktivitas 4 — Prediksi Data Baru</h3>
+            <p>Data baru: \(X = (Sunny, Cool, Normal, Strong)\). Hitung score posterior proporsionalnya (desimal 4 angka di belakang koma):</p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Score P(Yes | X)</label>
+                    <input type="text" id="score-tennis-yes" class="form-input" placeholder="0.0106">
+                </div>
+                <div>
+                    <label class="meta-label">Score P(No | X)</label>
+                    <input type="text" id="score-tennis-no" class="form-input" placeholder="0.0051">
+                </div>
+            </div>
+            <label class="meta-label">Prediksi Class Akhir</label>
+            <input type="text" id="pred-tennis" class="form-input" placeholder="Yes" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkPred1()"><i class="fa-solid fa-circle-check"></i> Cek Prediksi 1</button>
+                <button class="btn-reveal" onclick="revealPred1()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+        <!-- BAGIAN 3: Laplace Smoothing -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> BAGIAN 3 — Laplace Smoothing
+            </div>
+            <p>Laplace Smoothing digunakan untuk menanggulangi <strong>Zero Probability Problem</strong>.</p>
+            
+            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-top: 1rem;">Aktivitas 5 — Hitung P(Hot | No) dengan Laplace Smoothing</h3>
+            <p>Gunakan rumus: \(\frac{count(Hot, No) + 1}{count(No) + 3}\) (karena jumlah nilai Temperature = 3):</p>
+            <input type="text" id="smooth-hot-no" class="form-input" placeholder="0.125" style="margin-bottom: 1.5rem;">
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary);">Aktivitas 6 — Prediksi Baru dengan Smoothing</h3>
+            <p>Data baru: \(X = (Overcast, Hot, Normal, Weak)\). Hitung posterior dengan smoothing (desimal 4 angka di belakang koma):</p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">P(Yes | X) dengan Laplace</label>
+                    <input type="text" id="smooth-yes-score" class="form-input" placeholder="0.0271">
+                </div>
+                <div>
+                    <label class="meta-label">P(No | X) dengan Laplace</label>
+                    <input type="text" id="smooth-no-score" class="form-input" placeholder="0.0021">
+                </div>
+            </div>
+            <label class="meta-label">Keputusan Akhir (Yes / No)</label>
+            <input type="text" id="smooth-decision" class="form-input" placeholder="Yes" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkSmooth()"><i class="fa-solid fa-circle-check"></i> Cek Laplace Perhitungan</button>
+                <button class="btn-reveal" onclick="revealSmooth()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+        <!-- BAGIAN 4: Tugas Mandiri Smartphone -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-mobile-screen-button"></i> BAGIAN 4 — Prediksi Mandiri (Smartphone Recommendation)
+            </div>
+            <p>Dataset latihan Rekomendasi Smartphone (15 data points, target Recommend: Yes / No):</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Battery</th>
+                            <th>RAM</th>
+                            <th>Storage</th>
+                            <th>Camera</th>
+                            <th>Price</th>
+                            <th>Recommend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>High</td><td>8GB</td><td>128GB</td><td>16MP</td><td>Expensive</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>2</td><td>Medium</td><td>4GB</td><td>64GB</td><td>12MP</td><td>Medium</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>3</td><td>Low</td><td>2GB</td><td>32GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>4</td><td>High</td><td>8GB</td><td>128GB</td><td>16MP</td><td>Medium</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>5</td><td>Medium</td><td>4GB</td><td>64GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>6</td><td>High</td><td>8GB</td><td>64GB</td><td>12MP</td><td>Expensive</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>7</td><td>Low</td><td>2GB</td><td>32GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>8</td><td>Medium</td><td>4GB</td><td>128GB</td><td>12MP</td><td>Medium</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>9</td><td>High</td><td>8GB</td><td>128GB</td><td>16MP</td><td>Expensive</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>10</td><td>Medium</td><td>2GB</td><td>32GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>11</td><td>High</td><td>4GB</td><td>64GB</td><td>12MP</td><td>Medium</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>12</td><td>Low</td><td>2GB</td><td>64GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                        <tr><td>13</td><td>Medium</td><td>8GB</td><td>128GB</td><td>16MP</td><td>Expensive</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>14</td><td>High</td><td>4GB</td><td>128GB</td><td>12MP</td><td>Medium</td><td><span class="badge badge-success">Yes</span></td></tr>
+                        <tr><td>15</td><td>Low</td><td>2GB</td><td>32GB</td><td>8MP</td><td>Cheap</td><td><span class="badge badge-danger">No</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-top: 1.5rem;">Tugas 1 — Prior Smartphone</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">P(Yes)</label>
+                    <input type="text" id="phone-prior-yes" class="form-input" placeholder="0.6">
+                </div>
+                <div>
+                    <label class="meta-label">P(No)</label>
+                    <input type="text" id="phone-prior-no" class="form-input" placeholder="0.4">
+                </div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-top: 1.5rem;">Tugas 2 — Lengkapi CPT dengan Laplace Smoothing (k=3 karena 3 opsi nilai pada setiap fitur)</h3>
+            <p>Masukkan probabilitas bersyarat ber-smoothing (desimal 4 angka di belakang koma):</p>
+            
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Battery</h4>
+                    <label class="meta-label">P(High | Yes)</label>
+                    <input type="text" id="phone-bat-h-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.5">
+                    <label class="meta-label">P(High | No)</label>
+                    <input type="text" id="phone-bat-h-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1111">
+                    <label class="meta-label">P(Medium | Yes)</label>
+                    <input type="text" id="phone-bat-m-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4167">
+                    <label class="meta-label">P(Medium | No)</label>
+                    <input type="text" id="phone-bat-m-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.2222">
+                    <label class="meta-label">P(Low | Yes)</label>
+                    <input type="text" id="phone-bat-l-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0833">
+                    <label class="meta-label">P(Low | No)</label>
+                    <input type="text" id="phone-bat-l-n" class="form-input" placeholder="0.6667">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: RAM</h4>
+                    <label class="meta-label">P(8GB | Yes)</label>
+                    <input type="text" id="phone-ram-8-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.5">
+                    <label class="meta-label">P(8GB | No)</label>
+                    <input type="text" id="phone-ram-8-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1111">
+                    <label class="meta-label">P(4GB | Yes)</label>
+                    <input type="text" id="phone-ram-4-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4167">
+                    <label class="meta-label">P(4GB | No)</label>
+                    <input type="text" id="phone-ram-4-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.2222">
+                    <label class="meta-label">P(2GB | Yes)</label>
+                    <input type="text" id="phone-ram-2-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0833">
+                    <label class="meta-label">P(2GB | No)</label>
+                    <input type="text" id="phone-ram-2-n" class="form-input" placeholder="0.6667">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Storage</h4>
+                    <label class="meta-label">P(128GB | Yes)</label>
+                    <input type="text" id="phone-st-128-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.5833">
+                    <label class="meta-label">P(128GB | No)</label>
+                    <input type="text" id="phone-st-128-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1111">
+                    <label class="meta-label">P(64GB | Yes)</label>
+                    <input type="text" id="phone-st-64-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                    <label class="meta-label">P(64GB | No)</label>
+                    <input type="text" id="phone-st-64-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                    <label class="meta-label">P(32GB | Yes)</label>
+                    <input type="text" id="phone-st-32-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0833">
+                    <label class="meta-label">P(32GB | No)</label>
+                    <input type="text" id="phone-st-32-n" class="form-input" placeholder="0.5556">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Camera</h4>
+                    <label class="meta-label">P(16MP | Yes)</label>
+                    <input type="text" id="phone-cam-16-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.5">
+                    <label class="meta-label">P(16MP | No)</label>
+                    <input type="text" id="phone-cam-16-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1111">
+                    <label class="meta-label">P(12MP | Yes)</label>
+                    <input type="text" id="phone-cam-12-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4167">
+                    <label class="meta-label">P(12MP | No)</label>
+                    <input type="text" id="phone-cam-12-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.2222">
+                    <label class="meta-label">P(8MP | Yes)</label>
+                    <input type="text" id="phone-cam-8-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0833">
+                    <label class="meta-label">P(8MP | No)</label>
+                    <input type="text" id="phone-cam-8-n" class="form-input" placeholder="0.6667">
+                </div>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Feature: Price</h4>
+                <div class="grid-2">
+                    <div>
+                        <label class="meta-label">P(Expensive | Yes)</label>
+                        <input type="text" id="phone-pr-exp-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.4167">
+                        <label class="meta-label">P(Expensive | No)</label>
+                        <input type="text" id="phone-pr-exp-n" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1111">
+                        <label class="meta-label">P(Medium | Yes)</label>
+                        <input type="text" id="phone-pr-med-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.5">
+                        <label class="meta-label">P(Medium | No)</label>
+                        <input type="text" id="phone-pr-med-n" class="form-input" placeholder="0.1111">
+                    </div>
+                    <div>
+                        <label class="meta-label">P(Cheap | Yes)</label>
+                        <input type="text" id="phone-pr-chp-y" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.0833">
+                        <label class="meta-label">P(Cheap | No)</label>
+                        <input type="text" id="phone-pr-chp-n" class="form-input" placeholder="0.7778">
+                    </div>
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top:1.5rem;">
+                <button class="btn-check" onclick="checkCPT2()"><i class="fa-solid fa-circle-check"></i> Cek CPT Smartphone</button>
+                <button class="btn-reveal" onclick="revealCPT2()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary);">Tugas 3 — Prediksi Data Uji Baru</h3>
+            <p><strong>Data Uji 1:</strong> \(X_1 = (Medium, 4GB, 64GB, 8MP, Medium)\)</p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Score P(Yes | X1)</label>
+                    <input type="text" id="x1-yes" class="form-input" placeholder="0.0043">
+                </div>
+                <div>
+                    <label class="meta-label">Score P(No | X1)</label>
+                    <input type="text" id="x1-no" class="form-input" placeholder="0.0015">
+                </div>
+            </div>
+            <label class="meta-label">Rekomendasi Uji 1 (Yes / No)</label>
+            <input type="text" id="x1-dec" class="form-input" placeholder="Yes" style="margin-bottom: 1.5rem;">
+
+            <p style="margin-top: 1rem;"><strong>Data Uji 2:</strong> \(X_2 = (Low, 4GB, 128GB, 8MP, Expensive)\)</p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Score P(Yes | X2)</label>
+                    <input type="text" id="x2-yes" class="form-input" placeholder="0.0004">
+                </div>
+                <div>
+                    <label class="meta-label">Score P(No | X2)</label>
+                    <input type="text" id="x2-no" class="form-input" placeholder="0.0015">
+                </div>
+            </div>
+            <label class="meta-label">Rekomendasi Uji 2 (Yes / No)</label>
+            <input type="text" id="x2-dec" class="form-input" placeholder="No" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkPred2()"><i class="fa-solid fa-circle-check"></i> Cek Prediksi Smartphone</button>
+                <button class="btn-reveal" onclick="revealPred2()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap & Pembahasan Soal
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 1 & 2: Play Tennis</h3>
+            <ul>
+                <li><strong>Prior:</strong> \(P(Yes) = 9/14 \approx \mathbf{0.6429}\), \(P(No) = 5/14 \approx \mathbf{0.3571}\)</li>
+                <li><strong>Outlook Likelihood:</strong>
+                    <ul>
+                        <li>Sunny | Yes = 2/9 (\(0.2222\)), Sunny | No = 3/5 (\(0.6000\))</li>
+                        <li>Overcast | Yes = 4/9 (\(0.4444\)), Overcast | No = 0/5 (\(0.0000\))</li>
+                        <li>Rain | Yes = 3/9 (\(0.3333\)), Rain | No = 2/5 (\(0.4000\))</li>
+                    </ul>
+                </li>
+                <li><strong>Prediksi Manual \(X = (Sunny, Cool, Normal, Strong)\):</strong>
+                    <ul>
+                        <li>\(P(Yes|X) \propto 9/14 \times 2/9 \times 3/9 \times 6/9 \times 3/9 = 2/189 \approx \mathbf{0.0106}\)</li>
+                        <li>\(P(No|X) \propto 5/14 \times 3/5 \times 1/5 \times 1/5 \times 3/5 = 9/1750 \approx \mathbf{0.0051}\)</li>
+                        <li>Keputusan: \(0.0106 > 0.0051 \rightarrow \mathbf{Yes}\)</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3 style="margin: 2rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 3: Laplace Smoothing</h3>
+            <ul>
+                <li>P(Hot | No) dengan Smoothing: \(\frac{0+1}{5+3} = 1/8 = \mathbf{0.1250}\)</li>
+                <li><strong>Prediksi \(X = (Overcast, Hot, Normal, Weak)\):</strong>
+                    <ul>
+                        <li>\(P(Yes|X) \propto 9/14 \times \frac{4+1}{9+3} \times \frac{2+1}{9+3} \times \frac{6+1}{9+2} \times \frac{6+1}{9+2} = \frac{6615}{243936} \approx \mathbf{0.0271}\)</li>
+                        <li>\(P(No|X) \propto 5/14 \times \frac{0+1}{5+3} \times \frac{2+1}{5+3} \times \frac{1+1}{5+2} \times \frac{2+1}{5+2} = \frac{90}{43904} \approx \mathbf{0.0021}\)</li>
+                        <li>Keputusan: \(0.0271 > 0.0021 \rightarrow \mathbf{Yes}\)</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3 style="margin: 2rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 4: Smartphone Recommendation</h3>
+            <ul>
+                <li><strong>Prior:</strong> \(P(Yes) = 9/15 = \mathbf{0.6000}\), \(P(No) = 6/15 = \mathbf{0.4000}\)</li>
+                <li><strong>Conditional Probabilities (Laplace Smoothing):</strong>
+                    <ul>
+                        <li>Battery High: Yes = 6/12 (\(0.5000\)), No = 1/9 (\(0.1111\))</li>
+                        <li>RAM 4GB: Yes = 5/12 (\(0.4167\)), No = 2/9 (\(0.2222\))</li>
+                        <li>Storage 64GB: Yes = 4/12 (\(0.3333\)), No = 3/9 (\(0.3333\))</li>
+                        <li>Camera 8MP: Yes = 1/12 (\(0.0833\)), No = 6/9 (\(0.6667\))</li>
+                        <li>Price Expensive: Yes = 5/12 (\(0.4167\)), No = 1/9 (\(0.1111\))</li>
+                    </ul>
+                </li>
+                <li><strong>Prediksi Data Uji 1 \(X_1 = (Medium, 4GB, 64GB, 8MP, Medium)\):</strong>
+                    <ul>
+                        <li>\(P(Yes|X_1) \propto 0.6 \times \frac{5}{12} \times \frac{5}{12} \times \frac{4}{12} \times \frac{1}{12} \times \frac{6}{12} \approx \mathbf{0.0043}\)</li>
+                        <li>\(P(No|X_1) \propto 0.4 \times \frac{2}{9} \times \frac{2}{9} \times \frac{3}{9} \times \frac{6}{9} \times \frac{1}{9} \approx \mathbf{0.0015}\)</li>
+                        <li>Keputusan: \(0.0043 > 0.0015 \rightarrow \mathbf{Yes}\)</li>
+                    </ul>
+                </li>
+                <li><strong>Prediksi Data Uji 2 \(X_2 = (Low, 4GB, 128GB, 8MP, Expensive)\):</strong>
+                    <ul>
+                        <li>\(P(Yes|X_2) \propto 0.6 \times \frac{1}{12} \times \frac{5}{12} \times \frac{7}{12} \times \frac{1}{12} \times \frac{5}{12} \approx \mathbf{0.0004}\)</li>
+                        <li>\(P(No|X_2) \propto 0.4 \times \frac{6}{9} \times \frac{2}{9} \times \frac{1}{9} \times \frac{6}{9} \times \frac{1}{9} \approx \mathbf{0.0015}\)</li>
+                        <li>Keputusan: \(0.0004 < 0.0015 \rightarrow \mathbf{No}\)</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    // Tab Navigation
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    // Input border colors helpers
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    // --- BAGIAN 1 ---
+    function checkPrior() {
+        const tot = parseInt(document.getElementById('total-data').value);
+        const yes = parseInt(document.getElementById('total-yes').value);
+        const no = parseInt(document.getElementById('total-no').value);
+        const pYes = parseFloat(document.getElementById('prior-yes').value);
+        const pNo = parseFloat(document.getElementById('prior-no').value);
+
+        let correct = true;
+        if (tot === 14) markInput('total-data', true); else { markInput('total-data', false); correct = false; }
+        if (yes === 9) markInput('total-yes', true); else { markInput('total-yes', false); correct = false; }
+        if (no === 5) markInput('total-no', true); else { markInput('total-no', false); correct = false; }
+        if (Math.abs(pYes - 0.6429) < 0.01) markInput('prior-yes', true); else { markInput('prior-yes', false); correct = false; }
+        if (Math.abs(pNo - 0.3571) < 0.01) markInput('prior-no', true); else { markInput('prior-no', false); correct = false; }
+
+        if (correct) alert('Prior Probability Play Tennis Benar!');
+        else alert('Ada beberapa isian prior yang kurang tepat.');
+    }
+
+    function revealPrior() {
+        document.getElementById('total-data').value = '14';
+        document.getElementById('total-yes').value = '9';
+        document.getElementById('total-no').value = '5';
+        document.getElementById('prior-yes').value = '0.6429';
+        document.getElementById('prior-no').value = '0.3571';
+        checkPrior();
+    }
+
+    function checkOutlook() {
+        const csy = parseInt(document.getElementById('count-sun-yes').value);
+        const psy = parseFloat(document.getElementById('p-sun-yes').value);
+        const csn = parseInt(document.getElementById('count-sun-no').value);
+        const psn = parseFloat(document.getElementById('p-sun-no').value);
+
+        const coy = parseInt(document.getElementById('count-over-yes').value);
+        const poy = parseFloat(document.getElementById('p-over-yes').value);
+        const con = parseInt(document.getElementById('count-over-no').value);
+        const pon = parseFloat(document.getElementById('p-over-no').value);
+
+        const cry = parseInt(document.getElementById('count-rain-yes').value);
+        const pry = parseFloat(document.getElementById('p-rain-yes').value);
+        const crn = parseInt(document.getElementById('count-rain-no').value);
+        const prn = parseFloat(document.getElementById('p-rain-no').value);
+
+        let correct = true;
+        if (csy === 2) markInput('count-sun-yes', true); else { markInput('count-sun-yes', false); correct = false; }
+        if (Math.abs(psy - 0.2222) < 0.01) markInput('p-sun-yes', true); else { markInput('p-sun-yes', false); correct = false; }
+        if (csn === 3) markInput('count-sun-no', true); else { markInput('count-sun-no', false); correct = false; }
+        if (psn === 0.6) markInput('p-sun-no', true); else { markInput('p-sun-no', false); correct = false; }
+
+        if (coy === 4) markInput('count-over-yes', true); else { markInput('count-over-yes', false); correct = false; }
+        if (Math.abs(poy - 0.4444) < 0.01) markInput('p-over-yes', true); else { markInput('p-over-yes', false); correct = false; }
+        if (con === 0) markInput('count-over-no', true); else { markInput('count-over-no', false); correct = false; }
+        if (pon === 0) markInput('p-over-no', true); else { markInput('p-over-no', false); correct = false; }
+
+        if (cry === 3) markInput('count-rain-yes', true); else { markInput('count-rain-yes', false); correct = false; }
+        if (Math.abs(pry - 0.3333) < 0.01) markInput('p-rain-yes', true); else { markInput('p-rain-yes', false); correct = false; }
+        if (crn === 2) markInput('count-rain-no', true); else { markInput('count-rain-no', false); correct = false; }
+        if (prn === 0.4) markInput('p-rain-no', true); else { markInput('p-rain-no', false); correct = false; }
+
+        if (correct) alert('Tabel Likelihood Outlook Benar!');
+        else alert('Ada kesalahan hitung Outlook.');
+    }
+
+    function revealOutlook() {
+        document.getElementById('count-sun-yes').value = '2';
+        document.getElementById('p-sun-yes').value = '0.2222';
+        document.getElementById('count-sun-no').value = '3';
+        document.getElementById('p-sun-no').value = '0.6';
+
+        document.getElementById('count-over-yes').value = '4';
+        document.getElementById('p-over-yes').value = '0.4444';
+        document.getElementById('count-over-no').value = '0';
+        document.getElementById('p-over-no').value = '0.0';
+
+        document.getElementById('count-rain-yes').value = '3';
+        document.getElementById('p-rain-yes').value = '0.3333';
+        document.getElementById('count-rain-no').value = '2';
+        document.getElementById('p-rain-no').value = '0.4';
+
+        checkOutlook();
+    }
+
+    // --- BAGIAN 2 ---
+    function checkCPT1() {
+        const thyes = parseFloat(document.getElementById('p-temp-hot-yes').value);
+        const thno = parseFloat(document.getElementById('p-temp-hot-no').value);
+        const tmyes = parseFloat(document.getElementById('p-temp-mild-yes').value);
+        const tmno = parseFloat(document.getElementById('p-temp-mild-no').value);
+        const tcyes = parseFloat(document.getElementById('p-temp-cool-yes').value);
+        const tcno = parseFloat(document.getElementById('p-temp-cool-no').value);
+
+        const hhyes = parseFloat(document.getElementById('p-hum-high-yes').value);
+        const hhno = parseFloat(document.getElementById('p-hum-high-no').value);
+        const hnyes = parseFloat(document.getElementById('p-hum-norm-yes').value);
+        const hnno = parseFloat(document.getElementById('p-hum-norm-no').value);
+
+        const wwyes = parseFloat(document.getElementById('p-wind-weak-yes').value);
+        const wwno = parseFloat(document.getElementById('p-wind-weak-no').value);
+        const wsyes = parseFloat(document.getElementById('p-wind-str-yes').value);
+        const wsno = parseFloat(document.getElementById('p-wind-str-no').value);
+
+        let correct = true;
+        if (Math.abs(thyes - 0.2222) < 0.01) markInput('p-temp-hot-yes', true); else { markInput('p-temp-hot-yes', false); correct = false; }
+        if (thno === 0.4) markInput('p-temp-hot-no', true); else { markInput('p-temp-hot-no', false); correct = false; }
+        if (Math.abs(tmyes - 0.4444) < 0.01) markInput('p-temp-mild-yes', true); else { markInput('p-temp-mild-yes', false); correct = false; }
+        if (tmno === 0.4) markInput('p-temp-mild-no', true); else { markInput('p-temp-mild-no', false); correct = false; }
+        if (Math.abs(tcyes - 0.3333) < 0.01) markInput('p-temp-cool-yes', true); else { markInput('p-temp-cool-yes', false); correct = false; }
+        if (tcno === 0.2) markInput('p-temp-cool-no', true); else { markInput('p-temp-cool-no', false); correct = false; }
+
+        if (Math.abs(hhyes - 0.3333) < 0.01) markInput('p-hum-high-yes', true); else { markInput('p-hum-high-yes', false); correct = false; }
+        if (hhno === 0.8) markInput('p-hum-high-no', true); else { markInput('p-hum-high-no', false); correct = false; }
+        if (Math.abs(hnyes - 0.6667) < 0.01) markInput('p-hum-norm-yes', true); else { markInput('p-hum-norm-yes', false); correct = false; }
+        if (hnno === 0.2) markInput('p-hum-norm-no', true); else { markInput('p-hum-norm-no', false); correct = false; }
+
+        if (Math.abs(wwyes - 0.6667) < 0.01) markInput('p-wind-weak-yes', true); else { markInput('p-wind-weak-yes', false); correct = false; }
+        if (wwno === 0.4) markInput('p-wind-weak-no', true); else { markInput('p-wind-weak-no', false); correct = false; }
+        if (Math.abs(wsyes - 0.3333) < 0.01) markInput('p-wind-str-yes', true); else { markInput('p-wind-str-yes', false); correct = false; }
+        if (wsno === 0.6) markInput('p-wind-str-no', true); else { markInput('p-wind-str-no', false); correct = false; }
+
+        if (correct) alert('CPT Play Tennis Lengkap & Benar!');
+        else alert('Ada kesalahan pengisian nilai CPT.');
+    }
+
+    function revealCPT1() {
+        document.getElementById('p-temp-hot-yes').value = '0.2222';
+        document.getElementById('p-temp-hot-no').value = '0.4';
+        document.getElementById('p-temp-mild-yes').value = '0.4444';
+        document.getElementById('p-temp-mild-no').value = '0.4';
+        document.getElementById('p-temp-cool-yes').value = '0.3333';
+        document.getElementById('p-temp-cool-no').value = '0.2';
+
+        document.getElementById('p-hum-high-yes').value = '0.3333';
+        document.getElementById('p-hum-high-no').value = '0.8';
+        document.getElementById('p-hum-norm-yes').value = '0.6667';
+        document.getElementById('p-hum-norm-no').value = '0.2';
+
+        document.getElementById('p-wind-weak-yes').value = '0.6667';
+        document.getElementById('p-wind-weak-no').value = '0.4';
+        document.getElementById('p-wind-str-yes').value = '0.3333';
+        document.getElementById('p-wind-str-no').value = '0.6';
+
+        checkCPT1();
+    }
+
+    function checkPred1() {
+        const syes = parseFloat(document.getElementById('score-tennis-yes').value);
+        const sno = parseFloat(document.getElementById('score-tennis-no').value);
+        const dec = document.getElementById('pred-tennis').value.trim().toLowerCase();
+
+        let correct = true;
+        if (Math.abs(syes - 0.0106) < 0.002) markInput('score-tennis-yes', true); else { markInput('score-tennis-yes', false); correct = false; }
+        if (Math.abs(sno - 0.0051) < 0.002) markInput('score-tennis-no', true); else { markInput('score-tennis-no', false); correct = false; }
+        if (dec === 'yes') markInput('pred-tennis', true); else { markInput('pred-tennis', false); correct = false; }
+
+        if (correct) alert('Perhitungan Prediksi Tennis Benar!');
+        else alert('Ada kesalahan nilai score atau keputusan prediksi.');
+    }
+
+    function revealPred1() {
+        document.getElementById('score-tennis-yes').value = '0.0106';
+        document.getElementById('score-tennis-no').value = '0.0051';
+        document.getElementById('pred-tennis').value = 'Yes';
+        checkPred1();
+    }
+
+    // --- BAGIAN 3 ---
+    function checkSmooth() {
+        const hotno = parseFloat(document.getElementById('smooth-hot-no').value);
+        const syes = parseFloat(document.getElementById('smooth-yes-score').value);
+        const sno = parseFloat(document.getElementById('smooth-no-score').value);
+        const dec = document.getElementById('smooth-decision').value.trim().toLowerCase();
+
+        let correct = true;
+        if (hotno === 0.125) markInput('smooth-hot-no', true); else { markInput('smooth-hot-no', false); correct = false; }
+        if (Math.abs(syes - 0.0271) < 0.002) markInput('smooth-yes-score', true); else { markInput('smooth-yes-score', false); correct = false; }
+        if (Math.abs(sno - 0.0021) < 0.001) markInput('smooth-no-score', true); else { markInput('smooth-no-score', false); correct = false; }
+        if (dec === 'yes') markInput('smooth-decision', true); else { markInput('smooth-decision', false); correct = false; }
+
+        if (correct) alert('Perhitungan Laplace Smoothing Benar!');
+        else alert('Ada kesalahan pada bagian Laplace Smoothing.');
+    }
+
+    function revealSmooth() {
+        document.getElementById('smooth-hot-no').value = '0.125';
+        document.getElementById('smooth-yes-score').value = '0.0271';
+        document.getElementById('smooth-no-score').value = '0.0021';
+        document.getElementById('smooth-decision').value = 'Yes';
+        checkSmooth();
+    }
+
+    // --- BAGIAN 4 ---
+    function checkCPT2() {
+        // Prior
+        const py = parseFloat(document.getElementById('phone-prior-yes').value);
+        const pn = parseFloat(document.getElementById('phone-prior-no').value);
+
+        // Bat
+        const bathy = parseFloat(document.getElementById('phone-bat-h-y').value);
+        const bathn = parseFloat(document.getElementById('phone-bat-h-n').value);
+        const batmy = parseFloat(document.getElementById('phone-bat-m-y').value);
+        const batmn = parseFloat(document.getElementById('phone-bat-m-n').value);
+        const batly = parseFloat(document.getElementById('phone-bat-l-y').value);
+        const batln = parseFloat(document.getElementById('phone-bat-l-n').value);
+
+        // Ram
+        const r8y = parseFloat(document.getElementById('phone-ram-8-y').value);
+        const r8n = parseFloat(document.getElementById('phone-ram-8-n').value);
+        const r4y = parseFloat(document.getElementById('phone-ram-4-y').value);
+        const r4n = parseFloat(document.getElementById('phone-ram-4-n').value);
+        const r2y = parseFloat(document.getElementById('phone-ram-2-y').value);
+        const r2n = parseFloat(document.getElementById('phone-ram-2-n').value);
+
+        // St
+        const s128y = parseFloat(document.getElementById('phone-st-128-y').value);
+        const s128n = parseFloat(document.getElementById('phone-st-128-n').value);
+        const s64y = parseFloat(document.getElementById('phone-st-64-y').value);
+        const s64n = parseFloat(document.getElementById('phone-st-64-n').value);
+        const s32y = parseFloat(document.getElementById('phone-st-32-y').value);
+        const s32n = parseFloat(document.getElementById('phone-st-32-n').value);
+
+        // Cam
+        const c16y = parseFloat(document.getElementById('phone-cam-16-y').value);
+        const c16n = parseFloat(document.getElementById('phone-cam-16-n').value);
+        const c12y = parseFloat(document.getElementById('phone-cam-12-y').value);
+        const c12n = parseFloat(document.getElementById('phone-cam-12-n').value);
+        const c8y = parseFloat(document.getElementById('phone-cam-8-y').value);
+        const c8n = parseFloat(document.getElementById('phone-cam-8-n').value);
+
+        // Pr
+        const pexpy = parseFloat(document.getElementById('phone-pr-exp-y').value);
+        const pexpn = parseFloat(document.getElementById('phone-pr-exp-n').value);
+        const pmedy = parseFloat(document.getElementById('phone-pr-med-y').value);
+        const pmedn = parseFloat(document.getElementById('phone-pr-med-n').value);
+        const pchpy = parseFloat(document.getElementById('phone-pr-chp-y').value);
+        const pchpn = parseFloat(document.getElementById('phone-pr-chp-n').value);
+
+        let correct = true;
+        if (py === 0.6) markInput('phone-prior-yes', true); else { markInput('phone-prior-yes', false); correct = false; }
+        if (pn === 0.4) markInput('phone-prior-no', true); else { markInput('phone-prior-no', false); correct = false; }
+
+        if (bathy === 0.5) markInput('phone-bat-h-y', true); else { markInput('phone-bat-h-y', false); correct = false; }
+        if (Math.abs(bathn - 0.1111) < 0.01) markInput('phone-bat-h-n', true); else { markInput('phone-bat-h-n', false); correct = false; }
+        if (Math.abs(batmy - 0.4167) < 0.01) markInput('phone-bat-m-y', true); else { markInput('phone-bat-m-y', false); correct = false; }
+        if (Math.abs(batmn - 0.2222) < 0.01) markInput('phone-bat-m-n', true); else { markInput('phone-bat-m-n', false); correct = false; }
+        if (Math.abs(batly - 0.0833) < 0.01) markInput('phone-bat-l-y', true); else { markInput('phone-bat-l-y', false); correct = false; }
+        if (Math.abs(batln - 0.6667) < 0.01) markInput('phone-bat-l-n', true); else { markInput('phone-bat-l-n', false); correct = false; }
+
+        if (r8y === 0.5) markInput('phone-ram-8-y', true); else { markInput('phone-ram-8-y', false); correct = false; }
+        if (Math.abs(r8n - 0.1111) < 0.01) markInput('phone-ram-8-n', true); else { markInput('phone-ram-8-n', false); correct = false; }
+        if (Math.abs(r4y - 0.4167) < 0.01) markInput('phone-ram-4-y', true); else { markInput('phone-ram-4-y', false); correct = false; }
+        if (Math.abs(r4n - 0.2222) < 0.01) markInput('phone-ram-4-n', true); else { markInput('phone-ram-4-n', false); correct = false; }
+        if (Math.abs(r2y - 0.0833) < 0.01) markInput('phone-ram-2-y', true); else { markInput('phone-ram-2-y', false); correct = false; }
+        if (Math.abs(r2n - 0.6667) < 0.01) markInput('phone-ram-2-n', true); else { markInput('phone-ram-2-n', false); correct = false; }
+
+        if (Math.abs(s128y - 0.5833) < 0.01) markInput('phone-st-128-y', true); else { markInput('phone-st-128-y', false); correct = false; }
+        if (Math.abs(s128n - 0.1111) < 0.01) markInput('phone-st-128-n', true); else { markInput('phone-st-128-n', false); correct = false; }
+        if (Math.abs(s64y - 0.3333) < 0.01) markInput('phone-st-64-y', true); else { markInput('phone-st-64-y', false); correct = false; }
+        if (Math.abs(s64n - 0.3333) < 0.01) markInput('phone-st-64-n', true); else { markInput('phone-st-64-n', false); correct = false; }
+        if (Math.abs(s32y - 0.0833) < 0.01) markInput('phone-st-32-y', true); else { markInput('phone-st-32-y', false); correct = false; }
+        if (Math.abs(s32n - 0.5556) < 0.01) markInput('phone-st-32-n', true); else { markInput('phone-st-32-n', false); correct = false; }
+
+        if (c16y === 0.5) markInput('phone-cam-16-y', true); else { markInput('phone-cam-16-y', false); correct = false; }
+        if (Math.abs(c16n - 0.1111) < 0.01) markInput('phone-cam-16-n', true); else { markInput('phone-cam-16-n', false); correct = false; }
+        if (Math.abs(c12y - 0.4167) < 0.01) markInput('phone-cam-12-y', true); else { markInput('phone-cam-12-y', false); correct = false; }
+        if (Math.abs(c12n - 0.2222) < 0.01) markInput('phone-cam-12-n', true); else { markInput('phone-cam-12-n', false); correct = false; }
+        if (Math.abs(c8y - 0.0833) < 0.01) markInput('phone-cam-8-y', true); else { markInput('phone-cam-8-y', false); correct = false; }
+        if (Math.abs(c8n - 0.6667) < 0.01) markInput('phone-cam-8-n', true); else { markInput('phone-cam-8-n', false); correct = false; }
+
+        if (Math.abs(pexpy - 0.4167) < 0.01) markInput('phone-pr-exp-y', true); else { markInput('phone-pr-exp-y', false); correct = false; }
+        if (Math.abs(pexpn - 0.1111) < 0.01) markInput('phone-pr-exp-n', true); else { markInput('phone-pr-exp-n', false); correct = false; }
+        if (pmedy === 0.5) markInput('phone-pr-med-y', true); else { markInput('phone-pr-med-y', false); correct = false; }
+        if (Math.abs(pmedn - 0.1111) < 0.01) markInput('phone-pr-med-n', true); else { markInput('phone-pr-med-n', false); correct = false; }
+        if (Math.abs(pchpy - 0.0833) < 0.01) markInput('phone-pr-chp-y', true); else { markInput('phone-pr-chp-y', false); correct = false; }
+        if (Math.abs(pchpn - 0.7778) < 0.01) markInput('phone-pr-chp-n', true); else { markInput('phone-pr-chp-n', false); correct = false; }
+
+        if (correct) alert('CPT Smartphone Rekomendasi Benar!');
+        else alert('Ada kesalahan pengisian CPT Smartphone.');
+    }
+
+    function revealCPT2() {
+        document.getElementById('phone-prior-yes').value = '0.6';
+        document.getElementById('phone-prior-no').value = '0.4';
+
+        document.getElementById('phone-bat-h-y').value = '0.5';
+        document.getElementById('phone-bat-h-n').value = '0.1111';
+        document.getElementById('phone-bat-m-y').value = '0.4167';
+        document.getElementById('phone-bat-m-n').value = '0.2222';
+        document.getElementById('phone-bat-l-y').value = '0.0833';
+        document.getElementById('phone-bat-l-n').value = '0.6667';
+
+        document.getElementById('phone-ram-8-y').value = '0.5';
+        document.getElementById('phone-ram-8-n').value = '0.1111';
+        document.getElementById('phone-ram-4-y').value = '0.4167';
+        document.getElementById('phone-ram-4-n').value = '0.2222';
+        document.getElementById('phone-ram-2-y').value = '0.0833';
+        document.getElementById('phone-ram-2-n').value = '0.6667';
+
+        document.getElementById('phone-st-128-y').value = '0.5833';
+        document.getElementById('phone-st-128-n').value = '0.1111';
+        document.getElementById('phone-st-64-y').value = '0.3333';
+        document.getElementById('phone-st-64-n').value = '0.3333';
+        document.getElementById('phone-st-32-y').value = '0.0833';
+        document.getElementById('phone-st-32-n').value = '0.5556';
+
+        document.getElementById('phone-cam-16-y').value = '0.5';
+        document.getElementById('phone-cam-16-n').value = '0.1111';
+        document.getElementById('phone-cam-12-y').value = '0.4167';
+        document.getElementById('phone-cam-12-n').value = '0.2222';
+        document.getElementById('phone-cam-8-y').value = '0.0833';
+        document.getElementById('phone-cam-8-n').value = '0.6667';
+
+        document.getElementById('phone-pr-exp-y').value = '0.4167';
+        document.getElementById('phone-pr-exp-n').value = '0.1111';
+        document.getElementById('phone-pr-med-y').value = '0.5';
+        document.getElementById('phone-pr-med-n').value = '0.1111';
+        document.getElementById('phone-pr-chp-y').value = '0.0833';
+        document.getElementById('phone-pr-chp-n').value = '0.7778';
+
+        checkCPT2();
+    }
+
+    function checkPred2() {
+        const x1y = parseFloat(document.getElementById('x1-yes').value);
+        const x1n = parseFloat(document.getElementById('x1-no').value);
+        const x1d = document.getElementById('x1-dec').value.trim().toLowerCase();
+
+        const x2y = parseFloat(document.getElementById('x2-yes').value);
+        const x2n = parseFloat(document.getElementById('x2-no').value);
+        const x2d = document.getElementById('x2-dec').value.trim().toLowerCase();
+
+        let correct = true;
+        if (Math.abs(x1y - 0.0043) < 0.001) markInput('x1-yes', true); else { markInput('x1-yes', false); correct = false; }
+        if (Math.abs(x1n - 0.0015) < 0.001) markInput('x1-no', true); else { markInput('x1-no', false); correct = false; }
+        if (x1d === 'yes') markInput('x1-dec', true); else { markInput('x1-dec', false); correct = false; }
+
+        if (Math.abs(x2y - 0.0004) < 0.0002) markInput('x2-yes', true); else { markInput('x2-yes', false); correct = false; }
+        if (Math.abs(x2n - 0.0015) < 0.001) markInput('x2-no', true); else { markInput('x2-no', false); correct = false; }
+        if (x2d === 'no') markInput('x2-dec', true); else { markInput('x2-dec', false); correct = false; }
+
+        if (correct) alert('Hasil Prediksi Rekomendasi Smartphone Benar!');
+        else alert('Ada kesalahan nilai hitung prediksi smartphone.');
+    }
+
+    function revealPred2() {
+        document.getElementById('x1-yes').value = '0.0043';
+        document.getElementById('x1-no').value = '0.0015';
+        document.getElementById('x1-dec').value = 'Yes';
+
+        document.getElementById('x2-yes').value = '0.0004';
+        document.getElementById('x2-no').value = '0.0015';
+        document.getElementById('x2-dec').value = 'No';
+
+        checkPred2();
+    }
+
+    function revealAll() {
+        revealPrior();
+        revealOutlook();
+        revealCPT1();
+        revealPred1();
+        revealSmooth();
+        revealCPT2();
+        revealPred2();
+    }
+
+    function printToPDF() {
+        const originalAlert = window.alert;
+        window.alert = function() {};
+        try {
+            revealAll();
+        } finally {
+            window.alert = originalAlert;
+        }
+        switchTab('soal');
+        setTimeout(() => {
+            window.print();
+        }, 300);
+    }
+</script>
+
+</body>
+</html>
