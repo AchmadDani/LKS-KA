@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - Naïve Bayes (Kasus Baru)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Mahasiswa (LKM) - Kasus Baru Naïve Bayes</h1>
+        <div class="subtitle">Mata Kuliah: Machine Learning</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Materi</span>
+                <span class="meta-value">Naïve Bayes Kategorikal (Spam Classification)</span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- TAB CONTENT: LEMBAR SOAL -->
+    <main id="soal-content" class="tab-content active">
+        
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-envelope"></i> Klasifikasi Spam Email
+            </div>
+            <p>Dataset latihan 10 email dengan label Kelas Target (Spam / Ham):</p>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Ada Link Promo</th>
+                            <th>Domain Anonim</th>
+                            <th>Urgent Subject</th>
+                            <th>Kelas Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>2</td><td>Yes</td><td>Yes</td><td>No</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>3</td><td>Yes</td><td>No</td><td>Yes</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>4</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>5</td><td>Yes</td><td>No</td><td>No</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>6</td><td>No</td><td>Yes</td><td>No</td><td><span class="badge badge-danger">Spam</span></td></tr>
+                        <tr><td>7</td><td>Yes</td><td>No</td><td>Yes</td><td><span class="badge badge-success">Ham</span></td></tr>
+                        <tr><td>8</td><td>No</td><td>No</td><td>No</td><td><span class="badge badge-success">Ham</span></td></tr>
+                        <tr><td>9</td><td>No</td><td>No</td><td>Yes</td><td><span class="badge badge-success">Ham</span></td></tr>
+                        <tr><td>10</td><td>No</td><td>No</td><td>No</td><td><span class="badge badge-success">Ham</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <div>
+                    <strong>Data Baru (\(X_{new}\)):</strong> Link Promo = <strong>Yes</strong>, Domain Anonim = <strong>Yes</strong>, Urgent = <strong>No</strong>.
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Langkah 1: Perhitungan Prior</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">P(Spam)</label>
+                    <input type="text" id="prior-spam" class="form-input" placeholder="0.6">
+                </div>
+                <div>
+                    <label class="meta-label">P(Ham)</label>
+                    <input type="text" id="prior-ham" class="form-input" placeholder="0.4">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Langkah 2: Likelihood Tanpa Smoothing</h3>
+            <p>Hitung likelihood untuk Domain Anonim = Yes pada kelas Ham:</p>
+            <input type="text" id="like-dom-ham" class="form-input" placeholder="0.0" style="margin-bottom: 1rem;">
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Langkah 3: Laplace Smoothing (k=2)</h3>
+            <p>Gunakan rumus Laplace Smoothing:</p>
+            <div class="math-block">
+                $$P(x_i \mid c) = \frac{n_{ic} + 1}{n_c + 2}$$
+            </div>
+            <div class="grid-2">
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Spam (nc = 6)</h4>
+                    <label class="meta-label">P(Link=Yes | Spam)</label>
+                    <input type="text" id="l-link-spam" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.75">
+                    <label class="meta-label">P(Domain=Yes | Spam)</label>
+                    <input type="text" id="l-dom-spam" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.625">
+                    <label class="meta-label">P(Urgent=No | Spam)</label>
+                    <input type="text" id="l-urg-spam" class="form-input" placeholder="0.5">
+                </div>
+                <div>
+                    <h4 style="color:var(--text-primary); margin-bottom:0.5rem;">Ham (nc = 4)</h4>
+                    <label class="meta-label">P(Link=Yes | Ham)</label>
+                    <input type="text" id="l-link-ham" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.3333">
+                    <label class="meta-label">P(Domain=Yes | Ham)</label>
+                    <input type="text" id="l-dom-ham" class="form-input" style="margin-bottom:0.5rem;" placeholder="0.1667">
+                    <label class="meta-label">P(Urgent=No | Ham)</label>
+                    <input type="text" id="l-urg-ham" class="form-input" placeholder="0.6667">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Langkah 4: Posterior MAP & Keputusan</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Posterior Score (Spam)</label>
+                    <input type="text" id="score-spam" class="form-input" placeholder="0.1406">
+                </div>
+                <div>
+                    <label class="meta-label">Posterior Score (Ham)</label>
+                    <input type="text" id="score-ham" class="form-input" placeholder="0.0148">
+                </div>
+            </div>
+
+            <p style="margin-top: 1.5rem;"><strong>Keputusan Klasifikasi Email Baru:</strong></p>
+            <input type="text" id="dec-spam" class="form-input" placeholder="Spam" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkAll()"><i class="fa-solid fa-circle-check"></i> Cek Seluruh Jawaban</button>
+                <button class="btn-reveal" onclick="revealAll()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap & Pembahasan
+            </div>
+            
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary);">Langkah 1: Prior Probability</h3>
+            <ul>
+                <li>Total data latih = 10 email.</li>
+                <li>Spam = 6 email \(\rightarrow P(Spam) = 6/10 = \mathbf{0.6}\)</li>
+                <li>Ham = 4 email \(\rightarrow P(Ham) = 4/10 = \mathbf{0.4}\)</li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary);">Langkah 2: Likelihood Tanpa Smoothing</h3>
+            <ul>
+                <li>Dari 4 email Ham, tidak ada satu pun yang memiliki Domain Anonim = Yes.</li>
+                <li>Maka, \(P(\text{Domain Anonim} = \text{Yes} \mid \text{Ham}) = 0/4 = \mathbf{0}\).</li>
+                <li>Hal ini memicu **Zero Frequency Problem**, karena perkalian probabilitas posterior untuk Ham akan bernilai 0 mutlak terlepas dari kecocokan fitur lainnya.</li>
+            </ul>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary);">Langkah 3: Laplace Smoothing (k=2)</h3>
+            <p>Untuk menanggulangi zero frequency, ditambahkan konstanta 1 di pembilang dan \(k=2\) di penyebut:</p>
+            <div class="math-block">
+                $$\text{Spam (nc = 6):}$$
+                $$P(\text{Link}=\text{Yes} \mid \text{Spam}) = \frac{5 + 1}{6 + 2} = \frac{6}{8} = \mathbf{0.75}$$
+                $$P(\text{Domain}=\text{Yes} \mid \text{Spam}) = \frac{4 + 1}{6 + 2} = \frac{5}{8} = \mathbf{0.625}$$
+                $$P(\text{Urgent}=\text{No} \mid \text{Spam}) = \frac{3 + 1}{6 + 2} = \frac{4}{8} = \mathbf{0.5}$$
+                
+                $$\text{Ham (nc = 4):}$$
+                $$P(\text{Link}=\text{Yes} \mid \text{Ham}) = \frac{1 + 1}{4 + 2} = \frac{2}{6} \approx \mathbf{0.3333}$$
+                $$P(\text{Domain}=\text{Yes} \mid \text{Ham}) = \frac{0 + 1}{4 + 2} = \frac{1}{6} \approx \mathbf{0.1667}$$
+                $$P(\text{Urgent}=\text{No} \mid \text{Ham}) = \frac{3 + 1}{4 + 2} = \frac{4}{6} \approx \mathbf{0.6667}$$
+            </div>
+
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary);">Langkah 4: Posterior MAP & Keputusan</h3>
+            <ul>
+                <li><strong>Score(Spam):</strong>
+                    $$0.6 \times 0.75 \times 0.625 \times 0.5 = \mathbf{0.140625}$$
+                </li>
+                <li><strong>Score(Ham):</strong>
+                    $$0.4 \times 0.3333 \times 0.1667 \times 0.6667 \approx \mathbf{0.014815}$$
+                </li>
+                <li><strong>Keputusan Akhir:</strong> Karena \(\text{Score(Spam)} > \text{Score(Ham)}\) (\(0.1406 > 0.0148\)), email baru tersebut diklasifikasikan sebagai <strong>Spam</strong>.</li>
+            </ul>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    function revealAll() {
+        document.getElementById('prior-spam').value = '0.6';
+        document.getElementById('prior-ham').value = '0.4';
+        document.getElementById('like-dom-ham').value = '0.0';
+        document.getElementById('l-link-spam').value = '0.75';
+        document.getElementById('l-dom-spam').value = '0.625';
+        document.getElementById('l-urg-spam').value = '0.5';
+        document.getElementById('l-link-ham').value = '0.3333';
+        document.getElementById('l-dom-ham').value = '0.1667';
+        document.getElementById('l-urg-ham').value = '0.6667';
+        document.getElementById('score-spam').value = '0.1406';
+        document.getElementById('score-ham').value = '0.0148';
+        document.getElementById('dec-spam').value = 'Spam';
+        checkAll();
+    }
+
+    function checkAll() {
+        // Prior
+        const pSpam = parseFloat(document.getElementById('prior-spam').value);
+        const pHam = parseFloat(document.getElementById('prior-ham').value);
+        
+        // Likelihood
+        const lDomHamNo = parseFloat(document.getElementById('like-dom-ham').value);
+        
+        // Laplace Spam
+        const lLinkSpam = parseFloat(document.getElementById('l-link-spam').value);
+        const lDomSpam = parseFloat(document.getElementById('l-dom-spam').value);
+        const lUrgSpam = parseFloat(document.getElementById('l-urg-spam').value);
+
+        // Laplace Ham
+        const lLinkHam = parseFloat(document.getElementById('l-link-ham').value);
+        const lDomHam = parseFloat(document.getElementById('l-dom-ham').value);
+        const lUrgHam = parseFloat(document.getElementById('l-urg-ham').value);
+
+        // Score
+        const sSpam = parseFloat(document.getElementById('score-spam').value);
+        const sHam = parseFloat(document.getElementById('score-ham').value);
+
+        // Decision
+        const dec = document.getElementById('dec-spam').value.trim().toLowerCase();
+
+        let correct = true;
+
+        if (pSpam === 0.6) markInput('prior-spam', true); else { markInput('prior-spam', false); correct = false; }
+        if (pHam === 0.4) markInput('prior-ham', true); else { markInput('prior-ham', false); correct = false; }
+        
+        if (lDomHamNo === 0) markInput('like-dom-ham', true); else { markInput('like-dom-ham', false); correct = false; }
+
+        if (lLinkSpam === 0.75) markInput('l-link-spam', true); else { markInput('l-link-spam', false); correct = false; }
+        if (lDomSpam === 0.625) markInput('l-dom-spam', true); else { markInput('l-dom-spam', false); correct = false; }
+        if (lUrgSpam === 0.5) markInput('l-urg-spam', true); else { markInput('l-urg-spam', false); correct = false; }
+
+        if (Math.abs(lLinkHam - 0.3333) < 0.01) markInput('l-link-ham', true); else { markInput('l-link-ham', false); correct = false; }
+        if (Math.abs(lDomHam - 0.1667) < 0.01) markInput('l-dom-ham', true); else { markInput('l-dom-ham', false); correct = false; }
+        if (Math.abs(lUrgHam - 0.6667) < 0.01) markInput('l-urg-ham', true); else { markInput('l-urg-ham', false); correct = false; }
+
+        if (Math.abs(sSpam - 0.1406) < 0.005) markInput('score-spam', true); else { markInput('score-spam', false); correct = false; }
+        if (Math.abs(sHam - 0.0148) < 0.005) markInput('score-ham', true); else { markInput('score-ham', false); correct = false; }
+
+        if (dec === 'spam') markInput('dec-spam', true); else { markInput('dec-spam', false); correct = false; }
+
+        if (correct) alert('Luar Biasa! Semua langkah perhitungan Naïve Bayes Anda Benar!');
+        else alert('Ada beberapa isian yang masih kurang tepat. Cek kembali perhitungan pecahan Anda.');
+    }
+</script>
+
+</body>
+</html>

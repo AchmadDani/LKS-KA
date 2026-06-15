@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS AI - Regresi Linear & Logistik (LKM Naive bayes case 2)</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX for Beautiful Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161b2c;
+            --bg-tertiary: #1f263e;
+            --accent: #4f46e5;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(79, 70, 229, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --border-color: #2e3752;
+            --border-focus: #4f46e5;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent), var(--accent-hover));
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--accent-hover);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-input-inline {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100px;
+            text-align: center;
+        }
+
+        .form-input-inline:focus {
+            border-color: var(--border-focus);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: var(--font-main);
+            line-height: 1.5;
+        }
+
+        .reveal-box {
+            margin-top: 1.25rem;
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reveal-box.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-reveal {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-reveal:hover {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .highlight-ans {
+            color: var(--success);
+            font-weight: 700;
+            background: var(--success-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-accent {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(79, 70, 229, 0.05);
+            border-left-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .alert-info i {
+            color: var(--accent-hover);
+        }
+
+        .check-btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-check {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .math-block {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .bold-white {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lembar Kerja Mahasiswa (LKM): Naive bayes case 2</h1>
+        <div class="subtitle">Topik: Regresi Linear (Univariat & Multivariat) dan Regresi Logistik</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Nama Mahasiswa</span>
+                <span class="meta-value">Achmad Dani Saputra</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">NIM</span>
+                <span class="meta-value">103012580004</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Metode</span>
+                <span class="meta-value">Manual Komputasi & Visualisasi Interaktif</span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('soal')">
+            <i class="fa-solid fa-pen-to-square"></i> Lembar Soal (Interaktif)
+        </button>
+        <button class="tab-btn" onclick="switchTab('kunci')">
+            <i class="fa-solid fa-key"></i> Kunci Jawaban Lengkap
+        </button>
+    </nav>
+
+    <!-- TAB CONTENT: LEMBAR SOAL -->
+    <main id="soal-content" class="tab-content active">
+        
+        <!-- BAGIAN 1: Regresi Linear Univariat -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-chart-line"></i> BAGIAN 1: Regresi Linear Univariat
+            </div>
+            <p>Memprediksi Nilai Ujian berdasarkan Jam Belajar. Gunakan data latih berikut untuk mengisi perhitungan manual.</p>
+            
+            <h3 style="margin-top: 1rem; font-size: 1.1rem; color: var(--text-primary);">Tabel Data Latihan</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Data 0</th>
+                            <th>Data 1</th>
+                            <th>Data 2</th>
+                            <th>Data 3</th>
+                            <th>Data 4</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="bold-white">Jam Belajar (x)</td><td>2</td><td>4</td><td>6</td><td>8</td><td>10</td></tr>
+                        <tr><td class="bold-white">Nilai Ujian (y)</td><td>27</td><td>29</td><td>35</td><td>52</td><td>59</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Langkah 1: Perhitungan Manual</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Rata-rata x (\(\bar{x}\))</label>
+                    <input type="text" id="mean-x" class="form-input" placeholder="6.0">
+                </div>
+                <div>
+                    <label class="meta-label">Rata-rata y (\(\bar{y}\))</label>
+                    <input type="text" id="mean-y" class="form-input" placeholder="40.4">
+                </div>
+                <div>
+                    <label class="meta-label">Variance X (\(\sum (x - \bar{x})^2\))</label>
+                    <input type="text" id="var-x" class="form-input" placeholder="40.0">
+                </div>
+                <div>
+                    <label class="meta-label">Covariance X,Y (\(\sum (x - \bar{x})(y - \bar{y})\))</label>
+                    <input type="text" id="cov-xy" class="form-input" placeholder="174.0">
+                </div>
+                <div>
+                    <label class="meta-label">Bobot (w)</label>
+                    <input type="text" id="w-uni" class="form-input" placeholder="4.35">
+                </div>
+                <div>
+                    <label class="meta-label">Bias (a)</label>
+                    <input type="text" id="a-uni" class="form-input" placeholder="14.3">
+                </div>
+            </div>
+
+            <div class="check-btn-container" style="margin-top: 1.5rem;">
+                <button class="btn-check" onclick="checkUnivariate()"><i class="fa-solid fa-circle-check"></i> Cek Langkah 1</button>
+                <button class="btn-reveal" onclick="revealUnivariate()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <h3 style="font-size: 1.1rem; color: var(--text-primary);">Langkah 2: Hitung Sum Squared Error (SSE) Data Latih</h3>
+            <p>Hitung nilai prediksi \(\hat{y}\) dan error kuadrat \((y - \hat{y})^2\) dengan model regresi \(f(x) = wx + a\) yang didapatkan:</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>x</th>
+                            <th>y (Aktual)</th>
+                            <th>\(\hat{y}\) (Prediksi)</th>
+                            <th>\((y - \hat{y})^2\)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>2</td><td>51</td><td><input type="text" id="hat-0" class="form-input-inline" placeholder="23.0"></td><td><input type="text" id="err-0" class="form-input-inline" placeholder="784.0"></td></tr>
+                        <tr><td>4</td><td>46</td><td><input type="text" id="hat-1" class="form-input-inline" placeholder="31.7"></td><td><input type="text" id="err-1" class="form-input-inline" placeholder="204.49"></td></tr>
+                        <tr><td>6</td><td>60</td><td><input type="text" id="hat-2" class="form-input-inline" placeholder="40.4"></td><td><input type="text" id="err-2" class="form-input-inline" placeholder="384.16"></td></tr>
+                        <tr><td>8</td><td>85</td><td><input type="text" id="hat-3" class="form-input-inline" placeholder="49.1"></td><td><input type="text" id="err-3" class="form-input-inline" placeholder="1288.81"></td></tr>
+                        <tr><td>10</td><td>96</td><td><input type="text" id="hat-4" class="form-input-inline" placeholder="57.8"></td><td><input type="text" id="err-4" class="form-input-inline" placeholder="1459.24"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <label class="meta-label">Total Sum Squared Error (SSE = \(\sum (y - \hat{y})^2\))</label>
+            <input type="text" id="sse-total" class="form-input" placeholder="4120.7" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkSSE()"><i class="fa-solid fa-circle-check"></i> Cek Langkah 2</button>
+                <button class="btn-reveal" onclick="revealSSE()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <em>Info Verifikasi:</em> Jika Anda menghitung parameter terbaik langsung untuk tabel Langkah 2 ini (aktual y = [51, 46, 60, 85, 96]), diperoleh \(w = 6.45\) dan \(a = 28.9\) dengan total \(SSE = 245.1\). Kedua pendekatan ini diverifikasi otomatis oleh sistem.
+                </div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2: Regresi Linear Multivariat -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-cubes"></i> BAGIAN 2: Regresi Linear Multivariat
+            </div>
+            <p>Memprediksi Nilai Ujian berdasarkan Jam Belajar (\(x_1\)) dan Jumlah Latihan Soal (\(x_2\)) menggunakan operasi matriks aljabar linear.</p>
+
+            <h3 style="margin-top: 1rem; font-size: 1.1rem; color: var(--text-primary);">Data Latih Milik Anda (Contoh NIM Terkunci)</h3>
+            <ul>
+                <li>Data 1: Jam (\(x_1\)) = 2, Latihan (\(x_2\)) = 1, Nilai (y) = 5</li>
+                <li>Data 2: Jam (\(x_1\)) = 4, Latihan (\(x_2\)) = 2, Nilai (y) = 11</li>
+                <li>Data 3: Jam (\(x_1\)) = 5, Latihan (\(x_2\)) = 4, Nilai (y) = 15</li>
+            </ul>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Desain Matriks</h3>
+            <p>Representasikan data Anda ke dalam matriks \(X\) (disisipi kolom 1 di sisi paling kiri) dan vektor \(y\):</p>
+            
+            <div class="math-block">
+                $$X = \begin{bmatrix} 1 & x_{11} & x_{21} \\ 1 & x_{12} & x_{22} \\ 1 & x_{13} & x_{23} \end{bmatrix} = \begin{bmatrix} 1 & 2 & 1 \\ 1 & 4 & 2 \\ 1 & 5 & 4 \end{bmatrix} \qquad y = \begin{bmatrix} y_1 \\ y_2 \\ y_3 \end{bmatrix} = \begin{bmatrix} 5 \\ 11 \\ 15 \end{bmatrix}$$
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Hasil Perhitungan Bobot Matriks</h3>
+            <p>Gunakan rumus linear least squares multivariat: \(w = (X^T X)^{-1} X^T y\)</p>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">w0 (Bias / Intercept)</label>
+                    <input type="text" id="w0-mat" class="form-input" placeholder="-1.0">
+                </div>
+                <div>
+                    <label class="meta-label">w1 (Bobot Jam Belajar)</label>
+                    <input type="text" id="w1-mat" class="form-input" placeholder="2.67">
+                </div>
+                <div>
+                    <label class="meta-label">w2 (Bobot Latihan Soal)</label>
+                    <input type="text" id="w2-mat" class="form-input" placeholder="0.67">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Prediksi Manual Mahasiswa Baru</h3>
+            <p>Budi belajar selama 5 jam (\(x_1 = 5\)) dan menyelesaikan latihan soal sebanyak 2.5 set (\(x_2 = 2.5\)). Hitung prediksi nilai ujian Budi secara manual:</p>
+            <input type="text" id="pred-budi" class="form-input" placeholder="14" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkMultivariate()"><i class="fa-solid fa-circle-check"></i> Cek Bagian 2</button>
+                <button class="btn-reveal" onclick="revealMultivariate()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+        <!-- BAGIAN 3: Regresi Logistik -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-circle-nodes"></i> BAGIAN 3: Regresi Logistik
+            </div>
+            <p>Memprediksi probabilitas kelulusan (Lulus = 1, Gagal = 0) berdasarkan Jam Belajar menggunakan fungsi aktivasi Sigmoid.</p>
+
+            <h3 style="margin-top: 1rem; font-size: 1.1rem; color: var(--text-primary);">Parameter Terbaik Hasil Gradient Descent</h3>
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Bobot Terbaik (w)</label>
+                    <input type="text" id="w-log" class="form-input" placeholder="1.5">
+                </div>
+                <div>
+                    <label class="meta-label">Bias Terbaik (a)</label>
+                    <input type="text" id="a-log" class="form-input" placeholder="-9.0">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; color: var(--text-primary);">Prediksi Probabilitas Kelulusan Siti</h3>
+            <p>Siti belajar selama 8 jam (\(x = 8\)). Hitung kombinasi linear \(v\) dan probabilitas kelulusannya \(\sigma(v)\):</p>
+            
+            <div class="grid-2">
+                <div>
+                    <label class="meta-label">Kombinasi Linear (v = wx + a)</label>
+                    <input type="text" id="v-siti" class="form-input" placeholder="3.0">
+                </div>
+                <div>
+                    <label class="meta-label">Probabilitas (\(\sigma(v) = \frac{1}{1 + e^{-v}}\))</label>
+                    <input type="text" id="prob-siti" class="form-input" placeholder="0.9526">
+                </div>
+            </div>
+
+            <p style="margin-top: 1.5rem;"><strong>Keputusan Kelulusan Siti (Threshold = 0.5):</strong></p>
+            <input type="text" id="dec-siti" class="form-input" placeholder="Lulus" style="margin-bottom: 1.5rem;">
+
+            <div class="check-btn-container">
+                <button class="btn-check" onclick="checkLogistic()"><i class="fa-solid fa-circle-check"></i> Cek Bagian 3</button>
+                <button class="btn-reveal" onclick="revealLogistic()"><i class="fa-solid fa-eye"></i> Lihat Jawaban</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- TAB CONTENT: KUNCI JAWABAN LENGKAP -->
+    <main id="kunci-content" class="tab-content">
+        
+        <div class="card">
+            <div class="card-title" style="color: var(--success);">
+                <i class="fa-solid fa-square-poll-vertical"></i> Kunci Jawaban Lengkap & Formula Langkah Kerja
+            </div>
+            
+            <!-- BAGIAN 1 -->
+            <h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 1: Regresi Linear Univariat</h3>
+            <ul>
+                <li>Rata-rata: \(\bar{x} = \frac{2+4+6+8+10}{5} = \mathbf{6.0}\), \(\bar{y} = \frac{27+29+35+52+59}{5} = \mathbf{40.4}\)</li>
+                <li>Varians X: \(\sum (x - \bar{x})^2 = (-4)^2 + (-2)^2 + 0^2 + 2^2 + 4^2 = \mathbf{40.0}\)</li>
+                <li>Kovarians X,Y: \(\sum (x - \bar{x})(y - \bar{y}) = (-4)(-13.4) + (-2)(-11.4) + (0)(-5.4) + (2)(11.6) + (4)(18.6) = \mathbf{174.0}\)</li>
+                <li>Parameter Bobot: \(w = \frac{174.0}{40.0} = \mathbf{4.35}\)</li>
+                <li>Parameter Bias: \(a = \bar{y} - (w \cdot \bar{x}) = 40.4 - (4.35 \times 6) = \mathbf{14.3}\)</li>
+                <li><strong>Persamaan Garis:</strong> \(f(x) = 4.35x + 14.3\)</li>
+                <li style="margin-top: 0.5rem;"><strong>SSE untuk tabel Langkah 2 (Menggunakan Model w=4.35, a=14.3):</strong>
+                    <div class="math-block">
+                        $$x = 2 \rightarrow \hat{y} = 23.0 \rightarrow (51 - 23.0)^2 = 784.0$$
+                        $$x = 4 \rightarrow \hat{y} = 31.7 \rightarrow (46 - 31.7)^2 = 204.49$$
+                        $$x = 6 \rightarrow \hat{y} = 40.4 \rightarrow (60 - 40.4)^2 = 384.16$$
+                        $$x = 8 \rightarrow \hat{y} = 49.1 \rightarrow (85 - 49.1)^2 = 1288.81$$
+                        $$x = 10 \rightarrow \hat{y} = 57.8 \rightarrow (96 - 57.8)^2 = 1459.24$$
+                        $$\mathbf{Total\ SSE = 4120.7}$$
+                    </div>
+                </li>
+                <li style="margin-top: 0.5rem;"><strong>SSE untuk tabel Langkah 2 (Menggunakan model optimal tersendiri w=6.45, a=28.9):</strong>
+                    <div class="math-block">
+                        $$x = 2 \rightarrow \hat{y} = 41.8 \rightarrow (51 - 41.8)^2 = 84.64$$
+                        $$x = 4 \rightarrow \hat{y} = 54.7 \rightarrow (46 - 54.7)^2 = 75.69$$
+                        $$x = 6 \rightarrow \hat{y} = 67.6 \rightarrow (60 - 67.6)^2 = 57.76$$
+                        $$x = 8 \rightarrow \hat{y} = 80.5 \rightarrow (85 - 80.5)^2 = 20.25$$
+                        $$x = 10 \rightarrow \hat{y} = 93.4 \rightarrow (96 - 93.4)^2 = 6.76$$
+                        $$\mathbf{Total\ SSE = 245.1}$$
+                    </div>
+                </li>
+            </ul>
+
+            <!-- BAGIAN 2 -->
+            <h3 style="margin: 2rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 2: Regresi Linear Multivariat</h3>
+            <ul>
+                <li>Matriks data input:
+                    $$X^TX = \begin{bmatrix} 3 & 11 & 7 \\ 11 & 45 & 30 \\ 7 & 30 & 21 \end{bmatrix} \qquad (X^TX)^{-1} = \frac{1}{9} \begin{bmatrix} 45 & -21 & 15 \\ -21 & 14 & -13 \\ 15 & -13 & 14 \end{bmatrix}$$
+                </li>
+                <li>Penyelesaian bobot \(w\):
+                    $$w = (X^TX)^{-1}X^Ty = \begin{bmatrix} \mathbf{-1.0} \\ \mathbf{2.67} \\ \mathbf{0.67} \end{bmatrix}$$
+                </li>
+                <li><strong>Persamaan Garis Multivariat:</strong> \(f(x) = -1.0 + 2.67x_1 + 0.67x_2\)</li>
+                <li><strong>Prediksi Nilai Budi (\(x_1 = 5, x_2 = 2.5\)):</strong>
+                    $$f(5, 2.5) = -1.0 + 2.67(5) + 0.67(2.5) = -1.0 + 13.35 + 1.675 = 14.025 \approx \mathbf{14}$$
+                </li>
+            </ul>
+
+            <!-- BAGIAN 3 -->
+            <h3 style="margin: 2rem 0 0.5rem 0; font-size: 1.2rem; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 0.5rem;">Bagian 3: Regresi Logistik</h3>
+            <ul>
+                <li>Parameter Optimal: \(w = 1.5, a = -9.0\)</li>
+                <li>Substitusi Jam Belajar Siti (\(x = 8\)):
+                    $$v = wx + a = 1.5(8) + (-9) = 12 - 9 = \mathbf{3.0}$$
+                </li>
+                <li>Fungsi Aktivasi Sigmoid:
+                    $$\sigma(v) = \frac{1}{1 + e^{-v}} = \frac{1}{1 + e^{-3}} = \frac{1}{1 + 0.0498} \approx \mathbf{0.9526} \text{ (95.26\%)}$$
+                </li>
+                <li><strong>Keputusan Akhir:</strong> Karena probabilitas \(0.9526 \ge 0.5\), Siti diprediksi <strong>Lulus</strong>.</li>
+            </ul>
+        </div>
+        
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'soal') {
+            document.querySelector('.tab-nav button:nth-child(1)').classList.add('active');
+            document.getElementById('soal-content').classList.add('active');
+        } else {
+            document.querySelector('.tab-nav button:nth-child(2)').classList.add('active');
+            document.getElementById('kunci-content').classList.add('active');
+        }
+    }
+
+    function markInput(id, isCorrect) {
+        const el = document.getElementById(id);
+        if (isCorrect) {
+            el.style.borderColor = 'var(--success)';
+            el.style.backgroundColor = 'var(--success-light)';
+        } else {
+            el.style.borderColor = 'var(--danger)';
+            el.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+    }
+
+    function revealUnivariate() {
+        document.getElementById('mean-x').value = '6.0';
+        document.getElementById('mean-y').value = '40.4';
+        document.getElementById('var-x').value = '40.0';
+        document.getElementById('cov-xy').value = '174.0';
+        document.getElementById('w-uni').value = '4.35';
+        document.getElementById('a-uni').value = '14.3';
+        checkUnivariate();
+    }
+
+    function revealSSE() {
+        document.getElementById('hat-0').value = '23.0';
+        document.getElementById('err-0').value = '784.0';
+        document.getElementById('hat-1').value = '31.7';
+        document.getElementById('err-1').value = '204.49';
+        document.getElementById('hat-2').value = '40.4';
+        document.getElementById('err-2').value = '384.16';
+        document.getElementById('hat-3').value = '49.1';
+        document.getElementById('err-3').value = '1288.81';
+        document.getElementById('hat-4').value = '57.8';
+        document.getElementById('err-4').value = '1459.24';
+        document.getElementById('sse-total').value = '4120.7';
+        checkSSE();
+    }
+
+    function revealMultivariate() {
+        document.getElementById('w0-mat').value = '-1.0';
+        document.getElementById('w1-mat').value = '2.67';
+        document.getElementById('w2-mat').value = '0.67';
+        document.getElementById('pred-budi').value = '14';
+        checkMultivariate();
+    }
+
+    function revealLogistic() {
+        document.getElementById('w-log').value = '1.5';
+        document.getElementById('a-log').value = '-9.0';
+        document.getElementById('v-siti').value = '3.0';
+        document.getElementById('prob-siti').value = '0.9526';
+        document.getElementById('dec-siti').value = 'Lulus';
+        checkLogistic();
+    }
+
+    function checkUnivariate() {
+        const mx = parseFloat(document.getElementById('mean-x').value);
+        const my = parseFloat(document.getElementById('mean-y').value);
+        const vx = parseFloat(document.getElementById('var-x').value);
+        const cov = parseFloat(document.getElementById('cov-xy').value);
+        const w = parseFloat(document.getElementById('w-uni').value);
+        const a = parseFloat(document.getElementById('a-uni').value);
+
+        let correct = true;
+        if (mx === 6) markInput('mean-x', true); else { markInput('mean-x', false); correct = false; }
+        if (my === 40.4) markInput('mean-y', true); else { markInput('mean-y', false); correct = false; }
+        if (vx === 40) markInput('var-x', true); else { markInput('var-x', false); correct = false; }
+        if (cov === 174) markInput('cov-xy', true); else { markInput('cov-xy', false); correct = false; }
+        if (w === 4.35) markInput('w-uni', true); else { markInput('w-uni', false); correct = false; }
+        if (a === 14.3) markInput('a-uni', true); else { markInput('a-uni', false); correct = false; }
+
+        if (correct) alert('Perhitungan parameter regresi linear univariat Anda Benar!');
+        else alert('Ada beberapa isian parameter yang kurang tepat.');
+    }
+
+    function checkSSE() {
+        const sse = parseFloat(document.getElementById('sse-total').value);
+        const isModel1 = Math.abs(sse - 4120.7) < 5;
+        const isModel2 = Math.abs(sse - 245.1) < 5;
+
+        if (isModel1 || isModel2) {
+            markInput('sse-total', true);
+            alert('Perhitungan SSE Anda Benar!');
+        } else {
+            markInput('sse-total', false);
+            alert('Nilai SSE total masih belum tepat.');
+        }
+    }
+
+    function checkMultivariate() {
+        const w0 = parseFloat(document.getElementById('w0-mat').value);
+        const w1 = parseFloat(document.getElementById('w1-mat').value);
+        const w2 = parseFloat(document.getElementById('w2-mat').value);
+        const pred = parseFloat(document.getElementById('pred-budi').value);
+
+        let correct = true;
+        if (w0 === -1.0) markInput('w0-mat', true); else { markInput('w0-mat', false); correct = false; }
+        if (Math.abs(w1 - 2.67) < 0.05) markInput('w1-mat', true); else { markInput('w1-mat', false); correct = false; }
+        if (Math.abs(w2 - 0.67) < 0.05) markInput('w2-mat', true); else { markInput('w2-mat', false); correct = false; }
+        if (Math.abs(pred - 14) < 1) markInput('pred-budi', true); else { markInput('pred-budi', false); correct = false; }
+
+        if (correct) alert('Perhitungan Bobot Matriks & Prediksi Budi Benar!');
+        else alert('Cek kembali matriks invers atau langkah substitusinya.');
+    }
+
+    function checkLogistic() {
+        const w = parseFloat(document.getElementById('w-log').value);
+        const a = parseFloat(document.getElementById('a-log').value);
+        const v = parseFloat(document.getElementById('v-siti').value);
+        const prob = parseFloat(document.getElementById('prob-siti').value);
+        const dec = document.getElementById('dec-siti').value.trim().toLowerCase();
+
+        let correct = true;
+        if (w === 1.5) markInput('w-log', true); else { markInput('w-log', false); correct = false; }
+        if (a === -9.0) markInput('a-log', true); else { markInput('a-log', false); correct = false; }
+        if (v === 3.0) markInput('v-siti', true); else { markInput('v-siti', false); correct = false; }
+        if (Math.abs(prob - 0.9526) < 0.01) markInput('prob-siti', true); else { markInput('prob-siti', false); correct = false; }
+        if (dec === 'lulus') markInput('dec-siti', true); else { markInput('dec-siti', false); correct = false; }
+
+        if (correct) alert('Hasil Analisis Regresi Logistik Siti Benar!');
+        else alert('Ada kesalahan pada kombinasi linier, probabilitas, atau keputusan.');
+    }
+</script>
+
+</body>
+</html>
